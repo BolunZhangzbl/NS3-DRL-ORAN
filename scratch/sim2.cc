@@ -368,10 +368,6 @@ void NetworkScenario::create_lte_network()
     this->lte_helper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (100));
     this->lte_helper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (100));
 
-    // Set center frequencies for DL and UL
-    this->lte_helper->SetEnbDeviceAttribute("DlEarfcn", UintegerValue((dl_freq - 2110) / 0.1)); // Converts MHz to EARFCN
-    this->lte_helper->SetEnbDeviceAttribute("UlEarfcn", UintegerValue((ul_freq - 1920) / 0.1)); // Converts MHz to EARFCN
-
     // Set up a directional antenna, to allow 3-sector base stations
     // this->lte_helper->SetEnbAntennaModelType("ns3::ParabolicAntennaModel");
     // this->lte_helper->SetEnbAntennaModelAttribute("Beamwidth", DoubleValue(70.0));
