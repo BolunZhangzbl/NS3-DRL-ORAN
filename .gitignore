@@ -10,7 +10,8 @@ waf-tools/__pycache__/
 # Ignore the lock file
 .lock-waf_linux_build
 
-testpy-output
+testpy-output/
+onpolicy/
 
 # Ignore the generated wireless animation XML
 wireless-animation.xml
