@@ -13,13 +13,28 @@ def get_config():
     The configuration parser
 
     Env parameters
-        --adsf
+        --use_cude       : Whether to use CUDA for GPU acceleration (default: False)
+        --use_wandb      : Whether to log training metrics to Weights & Biases (default: False)
 
     ORAN parameters:
-        --asdf
+        --num_enbs       : Number of eNBs (base stations) in the simulation (default: 4)
+        --num_ues        : Number of UEs (user equipment) per eNB (default: 3)
+        --it_interval    : Interaction Interval between ORAN and agent in milliseconds (default: 100ms)
+        --sim_time       : Total simulation time in seconds (default: 30s)
 
     DRL parameters:
-        --asdf
+        --max_step       : Maximum number of steps per episode (default: 100)
+        --num_episodes   : Total number of episodes for training (default: 1000)
+        --last_n         : Number of last episodes to consider for evaluation (default: 10)
+        --actor_lr       : Learning rate for the actor network in DRL (default: 3e-4)
+        --critic_lr      : Learning rate for the critic network in DRL (default: 1e-3)
+        --dqn_lr         : Learning rate for the DQN network (default: 1e-3)
+        --gamma          : Discount factor for future rewards in reinforcement learning (default: 0.99)
+        --epsilon        : Initial exploration rate for epsilon-greedy strategy (default: 1.0)
+        --epsilon_min    : Minimum exploration rate during training (default: 0.01)
+        --epsilon_decay  : Decay rate for exploration rate over time (default: 0.9999)
+        --batch_size     : Batch size used during training (default: 256)
+        --seed           : Random seed for reproducibility of results (default: 42)
     """
     parser = argparse.ArgumentParser(description="nsoran")
 

@@ -54,3 +54,9 @@ def save_lists(file_path, ep_rewards, step_rewards, avg_rewards,
              step_losses=np.array(step_losses))
 
     print(f"Successfully saved lists in {file_path}!!!")
+
+
+def send_action(txp, fifo2):
+    txp="0,"+txp
+    print("sending action")
+    os.write(fifo2,txp.encode("utf-8"))

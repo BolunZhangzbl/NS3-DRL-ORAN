@@ -108,7 +108,7 @@ void NetworkScenario::run(){
     // AnimationInterface anim ("wireless-animation.xml"); // Mandatory
     // anim.SetMaxPktsPerTraceFile(0xFFFFFFFF);
 
-    Simulator::Stop(Seconds(3000.0));
+    Simulator::Stop(Seconds(30.0));
     Simulator::Run();
 
     this->printStats(this->flowmon,true);

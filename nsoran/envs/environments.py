@@ -6,6 +6,7 @@ from gym import spaces
 
 # -- Private Imports
 from nsoran.data_parser import *
+from nsoran.utils import *
 
 # -- Global Variables
 
@@ -42,6 +43,11 @@ class ORANSimEnv(gym.Env):
         self.reward_weights = [0.4, 0.4, 0.1, 0.1]
         self.reward_threshold = int(1e6)
 
+        # link to fifo
+        self.fifo1 = os.open("/home/bolun/ns-3-dev/fifo1", os.O_RDONLY)
+        self.fifo2 = os.open("/home/bolun/ns-3-dev/fifo2", os.O_WRONLY)
+        print("Opening FIFOs to send/recive...")
+
     def step(self, action):
 
         self.current_step += 1
@@ -60,7 +66,19 @@ class ORANSimEnv(gym.Env):
     def _get_obs(self):
         df_state = self.data_parser.read_kpms('state')
 
-        data_state = df_state.drop(columns=['cellId', 'IMSI', 'ccId']).to_numpy()
+        # Add Tx power from ORAN scenario
+        max_bytes = self.args.num_enbs*3 - 1
+        data_tx_power = os.read(self.fifo1, max_bytes)
+        try:
+            data_tx_power = data_tx_power.decode("uef-8")
+        except UnicodeDecodeError:
+            data_tx_power = ("60,"*self.args.num_enbs)[:-1]
+
+        # Map str to list int
+        data_tx_power = list(map(int, data_tx_power))
+        df_state['tx_power'] = data_tx_power
+
+        data_state = df_state.drop(columns=['time', 'cellId', 'IMSI', 'ccId']).to_numpy()
 
         return data_state
 
@@ -70,7 +88,7 @@ class ORANSimEnv(gym.Env):
         if df_reward.empty:
             return 0
 
-        data_reward = df_reward.drop(columns=['cellId', 'IMSI', 'ccId']).to_numpy()
+        data_reward = df_reward.drop(columns=['time', 'cellId', 'IMSI', 'ccId']).to_numpy()
         reward = np.dot(data_reward, self.reward_weights).sum()
 
         return reward
@@ -78,6 +96,12 @@ class ORANSimEnv(gym.Env):
     def _get_done(self, reward):
 
         return True if reward >= self.reward_threshold else False
+
+    def _send_action(self, action):
+        enbs_active_status = np.array(action)
+        txp = ','.join(enbs_active_status.astype(str))
+        print(f"action taken: {txp}")
+        send_action(txp, self.fifo2)
 
 
 
