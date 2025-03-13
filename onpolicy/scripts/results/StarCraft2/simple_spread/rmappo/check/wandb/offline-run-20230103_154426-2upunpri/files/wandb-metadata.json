@@ -1,0 +1,283 @@
+{
+    "os": "Linux-4.15.0-193-generic-x86_64-with-glibc2.17",
+    "python": "3.8.13",
+    "heartbeatAt": "2023-01-03T14:44:26.745485",
+    "startedAt": "2023-01-03T14:44:26.557715",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/home/waleed/on-policy/onpolicy/scripts/train/train_mpe.py",
+    "codePath": "on-policy/onpolicy/scripts/train/train_mpe.py",
+    "host": "endor",
+    "username": "waleed",
+    "executable": "/home/waleed/miniconda3/bin/python",
+    "cpu_count": 24,
+    "cpu_count_logical": 48,
+    "cpu_freq": {
+        "current": 803.2393750000001,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 800.424,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.698,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.282,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.067,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.384,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.652,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.596,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.035,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.614,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.758,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.625,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.03,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.48,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.112,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.77,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.791,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.607,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.347,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.338,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.077,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.921,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.315,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.066,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 906.896,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.065,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.136,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.037,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.616,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.083,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.593,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.671,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 801.02,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.465,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.959,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.757,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.689,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.429,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.077,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.059,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.089,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.326,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.478,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.566,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.131,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.656,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.483,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 800.645,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 1430.716,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "total": 1099.1910820007324,
+        "used": 656.6564521789551
+    },
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "gpu_count": 2,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce GTX 1080 Ti",
+            "memory_total": 11721506816
+        },
+        {
+            "name": "NVIDIA GeForce GTX 1080 Ti",
+            "memory_total": 11721506816
+        }
+    ],
+    "memory": {
+        "total": 61.68119812011719
+    }
+}
