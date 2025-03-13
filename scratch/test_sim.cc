@@ -91,7 +91,7 @@ void NetworkScenario::run(){
     this->periodically_interact_with_agent();
     AnimationInterface anim ("wireless-animation.xml"); // Mandatory
 
-    Simulator::Stop(Seconds(30.0));
+    Simulator::Stop(Seconds(3.0));
     Simulator::Run();
     Simulator::Destroy();
 }
@@ -270,7 +270,7 @@ void NetworkScenario::periodically_interact_with_agent()
     }
 
     // Reschedule again after this->interaction_interval (default 100 ms)
-    Simulator::Schedule(MilliSeconds(100),&NetworkScenario::periodically_interact_with_agent, this);
+    Simulator::Schedule(MilliSeconds(1000),&NetworkScenario::periodically_interact_with_agent, this);
 }
 
 
