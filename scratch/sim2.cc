@@ -155,26 +155,26 @@ void NetworkScenario::create_ue_nodes()
 
 void NetworkScenario::setup_callbacks()
 {
-    // Create packet calculators for each UE, and set up callbacks to count the
-    // number of bytes received over IPv4. Used by get_ue_rx_bytes() below
-    // for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
-    //     PacketSizeMinMaxAvgTotalCalculator *packet_calc = new PacketSizeMinMaxAvgTotalCalculator();
-    //     this->ue_nodes.Get(i)->GetObject<Ipv4L3Protocol>()->TraceConnectWithoutContext("Rx", MakeBoundCallback(&NetworkScenario::callback_ipv4_packet_received, packet_calc));
-    //     this->ue_packet_calcs.push_back(packet_calc);
-    // }
+     // Create packet calculators for each UE, and set up callbacks to count the
+     // number of bytes received over IPv4. Used by get_ue_rx_bytes() below
+     for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
+         PacketSizeMinMaxAvgTotalCalculator *packet_calc = new PacketSizeMinMaxAvgTotalCalculator();
+         this->ue_nodes.Get(i)->GetObject<Ipv4L3Protocol>()->TraceConnectWithoutContext("Rx", MakeBoundCallback(&NetworkScenario::callback_ipv4_packet_received, packet_calc));
+         this->ue_packet_calcs.push_back(packet_calc);
+     }
 
-    // Connect callbacks to trigger whenever a UE is connected to a new eNodeB,
-    // either because of initial network attachment or because of handovers
-    // Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
-    //     MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
-    // Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/HandoverEndOk",
-    //     MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
+     // Connect callbacks to trigger whenever a UE is connected to a new eNodeB,
+     // either because of initial network attachment or because of handovers
+     Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
+         MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
+     Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/HandoverEndOk",
+         MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
 
-    // // Connect callback for whenever an eNodeB receives "measurement reports".
-    // // These reports contain signal strength information of neighboring cells,
-    // // as seen by a UE. This is used by the eNodeB to determine handovers
-    // Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/LteEnbRrc/RecvMeasurementReport",
-    //     MakeCallback(&NetworkScenario::callback_measurement_report_received, this));
+     // Connect callback for whenever an eNodeB receives "measurement reports".
+     // These reports contain signal strength information of neighboring cells,
+     // as seen by a UE. This is used by the eNodeB to determine handovers
+     Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/LteEnbRrc/RecvMeasurementReport",
+         MakeCallback(&NetworkScenario::callback_measurement_report_received, this));
 }
 
 void NetworkScenario::callback_ue_spotted_at_enb(
@@ -346,7 +346,7 @@ void NetworkScenario::periodically_interact_with_agent()
     }
 
     // Reschedule again after this->interaction_interval (default 100 ms)
-    Simulator::Schedule(MilliSeconds(500),&NetworkScenario::periodically_interact_with_agent, this);
+    Simulator::Schedule(MilliSeconds(100),&NetworkScenario::periodically_interact_with_agent, this);
 }
 
 
@@ -367,6 +367,10 @@ void NetworkScenario::create_lte_network()
     this->lte_helper->SetAttribute ("EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
     this->lte_helper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (100));
     this->lte_helper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (100));
+
+    // Set center frequencies for DL and UL
+    this->lte_helper->SetEnbDeviceAttribute("DlEarfcn", UintegerValue((dl_freq - 2110) / 0.1)); // Converts MHz to EARFCN
+    this->lte_helper->SetEnbDeviceAttribute("UlEarfcn", UintegerValue((ul_freq - 1920) / 0.1)); // Converts MHz to EARFCN
 
     // Set up a directional antenna, to allow 3-sector base stations
     // this->lte_helper->SetEnbAntennaModelType("ns3::ParabolicAntennaModel");
