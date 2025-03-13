@@ -37,4 +37,5 @@ build/
 /.cproject
 /.project
 
+.venv/
 version.cache
