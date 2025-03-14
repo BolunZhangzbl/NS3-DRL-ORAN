@@ -43,9 +43,9 @@ def get_config():
     parser.add_argument('--use_wandb', type=bool, action='store_false', default=False, help='Whether to use wandb')
 
     # ORAN parameters
-    parser.add_argument('--num_enbs', type=int, default=4, help="Number of eNBs")
-    parser.add_argument('--num_ues', type=int, default=3, help="Number of UEs per eNB")
-    parser.add_argument('--it_interval', type=int, default=100, help="Interaction Interval between ORAN and agent in (ms)")
+    parser.add_argument('--num_enb', type=int, default=4, help="Number of eNBs")
+    parser.add_argument('--ue_per_enb', type=int, default=3, help="Number of UEs per eNB")
+    parser.add_argument('--it_period', type=int, default=100, help="Interaction Interval between ORAN and agent in (ms)")
     parser.add_argument('--sim_time', type=int, default=30, help="Simulation time in (sec)")
 
     # DRL parameters

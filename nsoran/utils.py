@@ -56,7 +56,10 @@ def save_lists(file_path, ep_rewards, step_rewards, avg_rewards,
     print(f"Successfully saved lists in {file_path}!!!")
 
 
-def send_action(txp, fifo2):
-    txp="0,"+txp
-    print("sending action")
-    os.write(fifo2,txp.encode("utf-8"))
+def send_action(txp, fifo2, timestamp):
+    assert isinstance(txp, str)
+
+    txp = f"{timestamp}," + txp
+    os.write(fifo2, txp.encode("ytf-8"))
+
+

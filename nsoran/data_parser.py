@@ -34,6 +34,7 @@ class DataParser:
 
         self.time_step = args.time_step   # in ms
         self.num_enbs = args.num_enbs
+        self.last_read_time = None        # Store the last processed timestamp
 
     def read_kpms(self, kpm_type='tp'):
         assert kpm_type in dict_columns.keys()
@@ -47,14 +48,22 @@ class DataParser:
                              skiprows=1, index_col=False)
         except Exception as e:
             print(f"Error reading the file {filename}: {e}")
-            return pd.DataFrame()
+            return pd.DataFrame(), None
 
         # Sample rows where time == max(time)
-        df_results = df[df['time'] == df['time'].max()][columns]
+        latest_time = df['time'].max()
+        if self.last_read_time:
+            df = df[df['time'] > self.last_read_time]
+
+        if df.empty:
+            return pd.DataFrame(), None
+
+        # Update the last read timestamp
+        self.last_read_time = latest_time
 
         # df_results = df[last:][columns]
-        df_results = self.filter_df_by_kpms(df_results)
-        df_results = df_results.sort_values(by=['cellId', 'IMSI'], ascending=[True, True])
+        df_results = self.filter_df_by_kpms(df)
+        df_results = df_results.sort_values(by=['cellId', 'IMSI'])
 
         return df_results
 
