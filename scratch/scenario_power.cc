@@ -134,7 +134,7 @@ void NetworkScenario::create_enb_nodes(){
     mobility_helper.SetMobilityModel("ns3::ConstantPositionMobilityModel"); // Explicit model
     mobility_helper.Install(this->enb_nodes);
 
-    for (uint32_t i = 0; i < num_enb; i++)
+    for (auto i = 0; i < num_enb; i++)
     {
         Ptr<Node> enb_node = this->enb_nodes.Get(i);
         Ptr<MobilityModel> mobility = enb_node->GetObject<MobilityModel>();
@@ -684,7 +684,7 @@ int main(int argc, char *argv[])
     NetworkScenario *scenario;
     scenario = new NetworkScenario();
 
-    scenario->initialize(num_enb, enb_position, enb_power, vector_ue_per_enb);
+    scenario->initialize(num_enb, enb_position, enb_power, vector_ue_per_enb, it_interval, sim_time);
     scenario->run();
 
     return 0;
