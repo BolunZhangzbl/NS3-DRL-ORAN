@@ -64,17 +64,16 @@ class ORANSimEnv(gym.Env):
 
         # Add Tx power from ORAN scenario
         max_bytes = self.args.num_enbs * 4
-        data_tx_power = os.read(self.fifo1, max_bytes)
         try:
             data_tx_power = os.read(self.fifo1, max_bytes).decode("utf-8", errors="ignore").strip()
             data_tx_power = list(map(int, data_tx_power.split(",")))
         except (OSError, UnicodeDecodeError, ValueError):
             print("Warning: Error reading Tx power, using default values.")
-            data_tx_power = [60] * self.num_enbs  # Default fallback
+            data_tx_power = [self.args.active_power] * self.num_enbs  # Default fallback
 
         df_state['tx_power'] = data_tx_power
 
-        data_state = df_state.drop(columns=['time', 'cellId', 'IMSI']).to_numpy()
+        data_state = df_state.to_numpy()
 
         return data_state, latest_time
 
@@ -84,7 +83,7 @@ class ORANSimEnv(gym.Env):
         if df_reward.empty:
             return 0, latest_time
 
-        data_reward = df_reward.drop(columns=['time', 'cellId', 'IMSI']).to_numpy()
+        data_reward = df_reward.to_numpy()
         reward = np.dot(data_reward, self.reward_weights).sum()
 
         return reward, latest_time

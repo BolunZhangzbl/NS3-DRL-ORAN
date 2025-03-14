@@ -30,7 +30,8 @@ class NetworkScenario
             std::vector<int> enb_power,
             std::vector<int> ue_per_enb,
             int it_period,
-            int sim_time);
+            int sim_time,
+            int active_power);
         void run();
 
         void enable_trace();
@@ -41,12 +42,11 @@ class NetworkScenario
         std::vector<int> ue_per_enb;
         int it_period;
         int sim_time;
+        int active_power;
 
         Ptr<FlowMonitor> Monitor;
         FlowMonitorHelper flowmon;
         ns3::Time last_ue_arrival;
-        int min_power;
-        int max_power;
         void ue_depart_callback();
         void ue_arrive_callback();
 
@@ -94,8 +94,7 @@ void NetworkScenario::initialize(
         this->ue_per_enb = ue_per_enb;
         this->it_period = it_period;
         this->sim_time = sim_time;
-        this->min_power = 19;
-        this->max_power = 65;
+        this->active_power = 44;
 
         this->create_enb_nodes();
         this->create_ue_nodes();
@@ -312,38 +311,28 @@ void NetworkScenario::periodically_interact_with_agent()
         return; // No valid data, exit early
     }
 
-    // Parse received power values
-    std::vector<int> recv_power;
-    std::stringstream power_stream(rbuf);
+    // Parse received action vector (binary values)
+    std::vector<int> action_vector;
+    std::stringstream action_stream(rbuf);
     std::string token;
 
-    while (std::getline(power_stream, token, ',')) {
+    while (std::getline(action_stream, token, ',')) {
         try {
-            recv_power.push_back(std::stoi(token));
+            int action = std::stoi(token);
+            action_vector.push_back(action);
         } catch (std::exception &e) {
-            std::cerr << "Error parsing power value: " << token << std::endl;
+            std::cerr << "Error parsing action value: " << token << std::endl;
         }
     }
 
-    // Update eNB power values
-    if (this->timestep() >= 200 && recv_power.size() >= this->enb_nodes.GetN() - 1) {
-        int power;
-        for (uint32_t i = 1; i < this->enb_nodes.GetN(); i++) {  // Start from index 1
-            power = recv_power[i - 1];  // Get the received power for the current eNB (shifted index)
-
-            // Check if the received power is outside the acceptable range
-            if (power < this->min_power) {
-                power = this->min_power;  // Set to minimum if below range
-            } else if (power > this->max_power) {
-                power = this->max_power;  // Set to maximum if above range
-            }
-
-            this->enb_power[i] = power;  // Set the power for the eNB
+    // Apply actions: Set power to zero for eNBs in sleep mode (0), else set to 44
+    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+        if (i < action_vector.size()) {  // Ensure index is valid
+            this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
         }
-
-        // Apply the network configuration after power adjustment
-        this->apply_network_conf();
     }
+
+    this->apply_network_conf();
 
     close(fd1);
     close(fd2);
@@ -351,6 +340,7 @@ void NetworkScenario::periodically_interact_with_agent()
     // Reschedule again after this->interaction_interval (default 100 ms)
     Simulator::Schedule(MilliSeconds(it_period),&NetworkScenario::periodically_interact_with_agent, this);
 }
+
 
 
 void NetworkScenario::enable_trace()
@@ -554,12 +544,16 @@ static ns3::GlobalValue g_ue_per_enb ("ue_per_enb", "Number of UEs per eNB",
                                       ns3::UintegerValue (3),
                                       ns3::MakeUintegerChecker<uint32_t> ());
 
-static ns3::GlobalValue g_it_interval ("it_period", "Period to run callbacks to interact with DRL agent in ms",
+static ns3::GlobalValue g_it_interval ("it_period", "Period to interact with DRL agent in ms",
                                        ns3::UintegerValue (100),
                                        ns3::MakeUintegerChecker<uint32_t> ());
 
 static ns3::GlobalValue g_sim_time ("sim_time", "Simulation Time in s",
                                      ns3::UintegerValue (30),
+                                     ns3::MakeUintegerChecker<uint32_t> ());
+
+static ns3::GlobalValue g_sim_time ("active_power", "Power values for active status",
+                                     ns3::UintegerValue (44),
                                      ns3::MakeUintegerChecker<uint32_t> ());
 
 int main(int argc, char *argv[])
@@ -586,6 +580,9 @@ int main(int argc, char *argv[])
 
     GlobalValue::GetValueByName("sim_time", uintegerValue);
     uint32_t sim_time = uintegerValue.Get();
+
+    GlobalValue::GetValueByName("active_power", uintegerValue);
+    uint32_t active_power = uintegerValue.Get();
 
     // Define the center position
     Vector centerPosition(maxXAxis / 2, maxYAxis / 2, 3);
@@ -620,7 +617,7 @@ int main(int argc, char *argv[])
     NetworkScenario *scenario;
     scenario = new NetworkScenario();
 
-    scenario->initialize(num_enb, enb_position, enb_power, vector_ue_per_enb, it_interval, sim_time);
+    scenario->initialize(num_enb, enb_position, enb_power, vector_ue_per_enb, it_interval, sim_time, active_power);
     scenario->run();
 
     return 0;

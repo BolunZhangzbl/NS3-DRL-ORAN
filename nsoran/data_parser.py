@@ -14,8 +14,8 @@ dict_kpms = dict(
 )
 
 dict_columns = dict(
-    tp=['time', 'cellId', 'IMSI', 'RNTI', 'mcs', 'size', 'rv', 'ndi', 'ccId'],
-    sinr=['time', 'cellId', 'IMSI', 'RNTI', 'rsrp', 'sinr', 'ComponentCarrierId']
+    tp=['time', 'cellId', 'IMSI', 'RNTI', 'mcs', 'size', 'rv', 'ndi', 'ccId'],      # Cell specific
+    sinr=['time', 'cellId', 'IMSI', 'RNTI', 'rsrp', 'sinr', 'ComponentCarrierId']   # UE specific
 )
 
 dict_filenames = dict(
@@ -28,12 +28,10 @@ dict_filenames = dict(
 
 class DataParser:
 
-    global last
-
     def __init__(self, args):
 
         self.time_step = args.time_step   # in ms
-        self.num_enbs = args.num_enbs
+        self.num_enb = args.num_enb
         self.last_read_time = None        # Store the last processed timestamp
 
     def read_kpms(self, kpm_type='tp'):
@@ -61,21 +59,21 @@ class DataParser:
         # Update the last read timestamp
         self.last_read_time = latest_time
 
-        # df_results = df[last:][columns]
-        df_results = self.filter_df_by_kpms(df)
-        df_results = df_results.sort_values(by=['cellId', 'IMSI'])
+        # Process df
+        df = self.drop_id_cols(df)
+        df = self.filter_df_by_enbs(df)
+        df = self.filter_df_by_kpms(df)
+        df = self.fill_missing_cellid(df)
 
-        return df_results
+        df_results = df.sort_values(by=['cellId'])
+
+        return df_results, latest_time
 
     def filter_df_by_enbs(self, df):
         """
-        Filter df by CellId for each eNB
+        Filter df by CellId for each eNB only if we select multiple timestamps
         """
-        df_results = pd.DataFrame()
-
-        for idx in range(1, self.num_enbs + 1):  # cellId 1 to num_enbs
-            filtered_df = df[df['cellId'] == str(idx)]
-            df_results = pd.concat([df_results, filtered_df])
+        df_results = df.groupby('cellId', as_index=False).sum()
 
         return df_results
 
@@ -88,6 +86,52 @@ class DataParser:
         df_copy['throughput'] = df['size']/8
 
         return df_copy
+
+    def drop_id_cols(self, df):
+        """
+        Drop ID columns
+        """
+        cols_to_drop = ['time', 'IMSI'] + [col for col in df.columns if 'Id' in col and col != 'cellId']
+        df = df.drop(columns=cols_to_drop, errors='ignore')
+
+        df_results = df.groupby('cellId', as_index=False).sum()
+
+        return df_results
+
+    def fill_missing_cellid(self, df):
+        """
+        Fill values for missing cellId with rows containing zeros for all columns.
+        """
+        # Ensure cellId is of integer type
+        df['cellId'] = df['cellId'].astype(int)
+
+        # Expected cell IDs
+        expected_cell_ids = set(range(1, self.num_enb + 1))
+
+        # Actual cell IDs in the DataFrame
+        actual_cell_ids = set(df['cellId'].unique())
+
+        # Check if all expected cell IDs are present
+        if actual_cell_ids == expected_cell_ids:
+            return df
+
+        # Find missing cell IDs
+        missing_cell_ids = expected_cell_ids - actual_cell_ids
+
+        # Create a DataFrame for missing rows
+        if missing_cell_ids:
+            missing_data = {col: 0 for col in df.columns}  # Dictionary with all columns set to 0
+            missing_rows = [{'cellId': cell_id, **missing_data} for cell_id in missing_cell_ids]
+            missing_df = pd.DataFrame(missing_rows)
+
+            # Concatenate the original DataFrame with the missing rows
+            df = pd.concat([df, missing_df], ignore_index=True)
+
+        # Sort the DataFrame by cellId for consistency
+        df = df.sort_values(by='cellId').reset_index(drop=True)
+
+        return df
+
 
 
 # if __name__ == '__main__':
