@@ -428,7 +428,7 @@ void NetworkScenario::create_ue_applications()
 int main(){
 
         int num_enb=4;
-        std::vector<std::vector<int>> enb_position{std::vector<int>{0,250,3},std::vector<int>{0,250,3} , std::vector<int>{750,250,3},std::vector<int>{750,250,3}};
+        std::vector<std::vector<int>> enb_position{std::vector<int>{1250,1250,3},std::vector<int>{1250,3750,3} , std::vector<int>{3750,3750,3},std::vector<int>{3750,1250,3}};
         std::vector<int> enb_power{60,60,60,60};
         std::vector<int> ue_per_enb{7,7,7,7};
         NetworkScenario *scenario;
