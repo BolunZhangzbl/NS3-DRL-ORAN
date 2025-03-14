@@ -147,12 +147,8 @@ void NetworkScenario::setup_callbacks()
 
     // Connect callbacks to trigger whenever a UE is connected to a new eNodeB,
     // either because of initial network attachment or because of handovers
-//    Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
-//        MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
-    Config::Connect("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionEstablished",
-    MakeCallback([](std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti) {
-        std::cout << "UE " << imsi << " connected to Cell " << cellId << std::endl;
-    }));
+    Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
+        MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
     Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/HandoverEndOk",
         MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
 
