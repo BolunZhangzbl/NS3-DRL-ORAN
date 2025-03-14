@@ -118,12 +118,13 @@ void NetworkScenario::run(){
 void NetworkScenario::create_enb_nodes(){
     this->enb_nodes.Create(num_enb);
     MobilityHelper mobility_helper;
+    mobility_helper.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     mobility_helper.Install(this->enb_nodes);
 
     for(auto i=0; i<num_enb; i++){
         Ptr<Node> enb_node = this->enb_nodes.Get(i);
         Ptr<MobilityModel> mobility = enb_node->GetObject<MobilityModel>();
-        mobility->SetPosition(Vector(this->enb_position[i][0],this->enb_position[i][1],this->enb_position[i][1]));
+        mobility->SetPosition(Vector(this->enb_position[i][0],this->enb_position[i][1],this->enb_position[i][2]));
 
     }
 }

@@ -99,12 +99,14 @@ void NetworkScenario::run(){
 void NetworkScenario::create_enb_nodes(){
     this->enb_nodes.Create(num_enb);
     MobilityHelper mobility_helper;
+    mobility_helper.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     mobility_helper.Install(this->enb_nodes);
 
     for(auto i=0; i<num_enb; i++){
         Ptr<Node> enb_node = this->enb_nodes.Get(i);
         Ptr<MobilityModel> mobility = enb_node->GetObject<MobilityModel>();
-        mobility->SetPosition(Vector(this->enb_position[i][0],this->enb_position[i][1],this->enb_position[i][1]));
+        mobility->SetPosition(Vector(this->enb_position[i][0],this->enb_position[i][1],this->enb_position[i][2]));
+
     }
 }
 
@@ -112,24 +114,25 @@ void NetworkScenario::create_enb_nodes(){
 
 void NetworkScenario::create_ue_nodes()
 {
-  NodeContainer new_ue_nodes;
-  new_ue_nodes.Create(std::accumulate(this->ue_per_enb.begin(),this->ue_per_enb.end(),0));
-  this->ue_nodes.Add(new_ue_nodes);
 
-  MobilityHelper mobility_helper;
-  mobility_helper.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
-    "Mode", StringValue("Time"),
-    "Time", StringValue("1s"),
-    "Speed", StringValue("ns3::ConstantRandomVariable[Constant=1.0]"),
-    "Bounds", StringValue("-1000|1000|-1000|1000"));
-  mobility_helper.Install(this->ue_nodes);
-   
- 
-    for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
-        Ptr<Node> ue_node = this->ue_nodes.Get(i);
-        Ptr<MobilityModel> mobility = ue_node->GetObject<MobilityModel>();
-        mobility->SetPosition(Vector(0+(i*20), 0+(i*20),0 ));
+    for(auto i=0; i<num_enb; i++){
+        NodeContainer ue_nodes_per_enb;
+        ue_nodes_per_enb.Create(this->ue_per_enb[i]);
+        this->ue_nodes.Add(ue_nodes_per_enb);
+        MobilityHelper mobility_helper;
+            mobility_helper.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+            "Mode", StringValue ("Time"),
+            "Time", StringValue ("0.1s"),
+            "Direction",StringValue("ns3::UniformRandomVariable[Min=0.0|Max=6.283185307]"),
+            "Speed", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"),
+            "Bounds", StringValue ("0|5000|0|5000"));
+        mobility_helper.SetPositionAllocator ("ns3::RandomDiscPositionAllocator",
+            "X", StringValue (std::to_string(this->enb_position[i][0])),
+            "Y", StringValue (std::to_string(this->enb_position[i][1])),
+            "Rho", StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=500.0]"));
+        mobility_helper.Install(ue_nodes_per_enb);
     }
+
 }
 
 void NetworkScenario::setup_callbacks()
@@ -144,8 +147,12 @@ void NetworkScenario::setup_callbacks()
 
     // Connect callbacks to trigger whenever a UE is connected to a new eNodeB,
     // either because of initial network attachment or because of handovers
-    Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
-        MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
+//    Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
+//        MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
+    Config::Connect("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionEstablished",
+    MakeCallback([](std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti) {
+        std::cout << "UE " << imsi << " connected to Cell " << cellId << std::endl;
+    }));
     Config::Connect("/NodeList/*/DeviceList/*/LteEnbRrc/HandoverEndOk",
         MakeCallback(&NetworkScenario::callback_ue_spotted_at_enb, this));
 
@@ -425,7 +432,7 @@ void NetworkScenario::create_ue_applications()
 int main(){
 
         int num_enb=4;
-        std::vector<std::vector<int>> enb_position{std::vector<int>{0,250,0},std::vector<int>{0,250,0} , std::vector<int>{750,250,0},std::vector<int>{750,250,0}};
+        std::vector<std::vector<int>> enb_position{std::vector<int>{0,250,3},std::vector<int>{0,250,3} , std::vector<int>{750,250,3},std::vector<int>{750,250,3}};
         std::vector<int> enb_power{60,60,60,60};
         std::vector<int> ue_per_enb{7,7,7,7};
         NetworkScenario *scenario;

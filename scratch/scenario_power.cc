@@ -143,31 +143,60 @@ void NetworkScenario::create_enb_nodes(){
 }
 
 
+//void NetworkScenario::create_ue_nodes()
+//{
+//
+//    for(auto i=0; i<num_enb; i++){
+//        NodeContainer ue_nodes_per_enb;
+//        ue_nodes_per_enb.Create(this->ue_per_enb[i]);
+//        this->ue_nodes.Add(ue_nodes_per_enb);
+//
+//        MobilityHelper mobility_helper;
+//
+//        mobility_helper.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+//            "Mode", StringValue ("Time"),
+//            "Time", StringValue ("0.1s"),
+//            "Direction",StringValue("ns3::UniformRandomVariable[Min=0.0|Max=6.283185307]"),
+//            "Speed", StringValue ("ns3::ConstantRandomVariable[Constant=50.0]"),
+//            "Bounds", StringValue ("-5000|5000|-5000|5000"));
+//
+//        mobility_helper.SetPositionAllocator ("ns3::RandomDiscPositionAllocator",
+//            "X", StringValue (std::to_string(this->enb_position[i][0])),
+//            "Y", StringValue (std::to_string(this->enb_position[i][1])),
+//            "Rho", StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=500.0]"));
+//
+//        mobility_helper.Install(ue_nodes_per_enb);
+//    }
+//
+//}
+
 void NetworkScenario::create_ue_nodes()
 {
-
-    for(auto i=0; i<num_enb; i++){
+    for (auto i = 0; i < num_enb; i++) {
         NodeContainer ue_nodes_per_enb;
         ue_nodes_per_enb.Create(this->ue_per_enb[i]);
         this->ue_nodes.Add(ue_nodes_per_enb);
 
+        // Create position allocator for UEs around eNB
+        Ptr<UniformDiscPositionAllocator> uePositionAlloc = CreateObject<UniformDiscPositionAllocator>();
+        uePositionAlloc->SetX(this->enb_position[i][0]);
+        uePositionAlloc->SetY(this->enb_position[i][1]);
+        uePositionAlloc->SetRho(500.0);  // Max distance from eNB
+
+        // Create a random speed variable
+        Ptr<UniformRandomVariable> speed = CreateObject<UniformRandomVariable>();
+        speed->SetAttribute("Min", DoubleValue(2.0));  // Min speed: 2 m/s
+        speed->SetAttribute("Max", DoubleValue(4.0));  // Max speed: 4 m/s
+
+        // Set mobility model for UEs
         MobilityHelper mobility_helper;
+        mobility_helper.SetMobilityModel("ns3::RandomWalk2dOutdoorMobilityModel",
+            "Speed", PointerValue(speed),
+            "Bounds", RectangleValue(Rectangle(0, 5000, 0, 5000))); // Adjusted to simulation area
 
-        mobility_helper.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-            "Mode", StringValue ("Time"),
-            "Time", StringValue ("0.1s"),
-            "Direction",StringValue("ns3::UniformRandomVariable[Min=0.0|Max=6.283185307]"),
-            "Speed", StringValue ("ns3::ConstantRandomVariable[Constant=50.0]"),
-            "Bounds", StringValue ("-5000|5000|-5000|5000"));
-
-        mobility_helper.SetPositionAllocator ("ns3::RandomDiscPositionAllocator",
-            "X", StringValue (std::to_string(this->enb_position[i][0])),
-            "Y", StringValue (std::to_string(this->enb_position[i][1])),
-            "Rho", StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=500.0]"));
-
+        mobility_helper.SetPositionAllocator(uePositionAlloc);
         mobility_helper.Install(ue_nodes_per_enb);
     }
-
 }
 
 void NetworkScenario::setup_callbacks()
