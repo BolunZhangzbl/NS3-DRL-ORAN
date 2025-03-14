@@ -264,6 +264,80 @@ void NetworkScenario::dump_initial_state()
     std::cout << this->timestep() << " ms: Seed " << std::endl;
 }
 
+//void NetworkScenario::periodically_interact_with_agent()
+//{
+//    // Dump relevant simulation state for each UE to stdout. Currently we are
+//    // interested in 2D position and IPv4 bytes received since last time
+//    // for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
+//    //     Ptr<Node> node = this->ue_nodes.Get(i);
+//    //     Vector position = node->GetObject<MobilityModel>()->GetPosition();
+//    //     std::cout << this->timestep() << " ms: UE state: "    << "IMSI " << (i + 1)    << " at " << position.x << " " << position.y<< std::endl;
+//    // }
+//
+//    int fd1 = open("fifo1", O_WRONLY);
+//    int fd2 = open("fifo2", O_RDONLY);
+//
+//    if (fd1 == -1 || fd2 == -1) {
+//        std::cerr << "Error: Could not open FIFOs" << std::endl;
+//        return;
+//    }
+//
+//    std::cout<<"Starting to send \n";
+//    std::stringstream ss;
+//    // fflush(stdout);
+//
+//    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+//        ss << this->enb_power[i] << ",";
+//    }
+//    std::string tx_power_str = ss.str();
+//    std::cout << "Current Tx Power: " << tx_power_str << std::endl;
+//
+//    // Send the power levels through FIFO1
+//    write(fd1, tx_power_str.c_str(), tx_power_str.size());
+//
+//    char rbuf[50];
+//    memset(rbuf, 0, sizeof(rbuf));
+//
+//    // Read from FIFO2 (DRL agent response)
+//    ssize_t bytesRead = read(fd2, rbuf, sizeof(rbuf) - 1);
+//    if (bytesRead > 0) {
+//        rbuf[bytesRead] = '\0';  // Null-terminate to avoid garbage characters
+//        std::cout << "Received new Tx Power: " << rbuf << std::endl;
+//    } else {
+//        std::cerr << "Error: No data received from DRL agent" << std::endl;
+//        close(fd1);
+//        close(fd2);
+//        return; // No valid data, exit early
+//    }
+//
+//    // Parse received power values
+//    std::vector<int> recv_power;
+//    std::stringstream power_stream(rbuf);
+//    std::string token;
+//
+//    while (std::getline(power_stream, token, ',')) {
+//        try {
+//            recv_power.push_back(std::stoi(token));
+//        } catch (std::exception &e) {
+//            std::cerr << "Error parsing power value: " << token << std::endl;
+//        }
+//    }
+//
+//    // Update eNB power values
+//    if (this->timestep() >= 200 && recv_power.size() >= this->enb_nodes.GetN() - 1) {
+//        for (uint32_t i = 1; i < this->enb_nodes.GetN(); i++) {  // Start from index 1
+//            this->enb_power[i] = recv_power[i - 1];  // Adjust for shifted index
+//        }
+//        this->apply_network_conf();
+//    }
+//
+//    close(fd1);
+//    close(fd2);
+//
+//    // Reschedule again after this->interaction_interval (default 100 ms)
+//    Simulator::Schedule(MilliSeconds(it_period),&NetworkScenario::periodically_interact_with_agent, this);
+//}
+
 void NetworkScenario::periodically_interact_with_agent()
 {
     // Dump relevant simulation state for each UE to stdout. Currently we are
@@ -310,26 +384,28 @@ void NetworkScenario::periodically_interact_with_agent()
         return; // No valid data, exit early
     }
 
-    // Parse received power values
-    std::vector<int> recv_power;
-    std::stringstream power_stream(rbuf);
+    // Parse received action vector (binary values)
+    std::vector<int> action_vector;
+    std::stringstream action_stream(rbuf);
     std::string token;
 
-    while (std::getline(power_stream, token, ',')) {
+    while (std::getline(action_stream, token, ',')) {
         try {
-            recv_power.push_back(std::stoi(token));
+            int action = std::stoi(token);
+            action_vector.push_back(action);
         } catch (std::exception &e) {
-            std::cerr << "Error parsing power value: " << token << std::endl;
+            std::cerr << "Error parsing action value: " << token << std::endl;
         }
     }
 
-    // Update eNB power values
-    if (this->timestep() >= 200 && recv_power.size() >= this->enb_nodes.GetN() - 1) {
-        for (uint32_t i = 1; i < this->enb_nodes.GetN(); i++) {  // Start from index 1
-            this->enb_power[i] = recv_power[i - 1];  // Adjust for shifted index
+    // Apply actions: Set power to zero for eNBs in sleep mode (0)
+    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+        if (action_vector[i] == 0) {
+            this->enb_power[i] = 0;  // Sleep mode
         }
-        this->apply_network_conf();
     }
+
+    this->apply_network_conf();
 
     close(fd1);
     close(fd2);
@@ -563,7 +639,7 @@ int main(int argc, char *argv[])
     UintegerValue uintegerValue;
 
     GlobalValue::GetValueByName("num_enb", uintegerValue);
-    uint32_t num_enbs = uintegerValue.Get();
+    uint32_t num_enb = uintegerValue.Get();
 
     GlobalValue::GetValueByName("ue_per_enb", uintegerValue);
     uint32_t ue_per_enb = uintegerValue.Get();

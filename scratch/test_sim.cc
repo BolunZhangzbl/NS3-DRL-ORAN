@@ -406,12 +406,28 @@ void NetworkScenario::create_ue_applications()
 }
 
 
+//int main(){
+//
+//        int num_enb=2;
+//        std::vector<std::vector<int>> enb_position{std::vector<int>{50,50,0}, std::vector<int>{250,250,0}};
+//        std::vector<int> enb_power{150,150};
+//        std::vector<int> ue_per_enb{5,5};
+//        NetworkScenario *scenario;
+//        scenario = new NetworkScenario();
+//
+//        scenario->initialize(num_enb,enb_position,enb_power, ue_per_enb);
+//        scenario->enable_trace();
+//        scenario->run();
+//   return 0;
+//}
+
+
 int main(){
 
-        int num_enb=2;
-        std::vector<std::vector<int>> enb_position{std::vector<int>{50,50,0}, std::vector<int>{250,250,0}};
-        std::vector<int> enb_power{150,150};
-        std::vector<int> ue_per_enb{5,5};
+        int num_enb=4;
+        std::vector<std::vector<int>> enb_position{std::vector<int>{0,250,0},std::vector<int>{0,250,0} , std::vector<int>{750,250,0},std::vector<int>{750,250,0}};
+        std::vector<int> enb_power{60,60,60,60};
+        std::vector<int> ue_per_enb{7,7,7,7};
         NetworkScenario *scenario;
         scenario = new NetworkScenario();
 
@@ -419,4 +435,5 @@ int main(){
         scenario->enable_trace();
         scenario->run();
    return 0;
+
 }
