@@ -124,7 +124,7 @@ void NetworkScenario::create_ue_nodes()
             "Mode", StringValue ("Time"),
             "Time", StringValue ("0.1s"),
             "Direction",StringValue("ns3::UniformRandomVariable[Min=0.0|Max=6.283185307]"),
-            "Speed", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"),
+            "Speed", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"),
             "Bounds", StringValue ("0|5000|0|5000"));
         mobility_helper.SetPositionAllocator ("ns3::RandomDiscPositionAllocator",
             "X", StringValue (std::to_string(this->enb_position[i][0])),
