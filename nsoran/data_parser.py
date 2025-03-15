@@ -56,7 +56,6 @@ class DataParser:
         try:
             df = pd.read_csv(file_path, delim_whitespace=True, comment='%', names=columns,
                              skiprows=1, index_col=False, usecols=usecols)
-            print(df.head())
         except Exception as e:
             print(f"Error reading the file {filename}: {e}")
             return pd.DataFrame(), None
@@ -92,10 +91,6 @@ class DataParser:
         df_tp = self.read_kpms(kpm_type='tp')
         df_sinr = self.read_kpms(kpm_type='sinr')
         df_prb = self.read_kpms(kpm_type='prb')
-
-        print(df_tp)
-        print(df_sinr)
-        print(df_prb)
 
         df_aggregated = df_tp.merge(df_sinr, on='cellId', how='outer').merge(df_prb, on='cellId', how='outer')
         df_aggregated = self.fill_missing_cellid(df_aggregated)
