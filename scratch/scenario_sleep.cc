@@ -611,7 +611,7 @@ int main(int argc, char *argv[])
         enb_position.push_back({x, y, 3});
     }
 
-    std::vector<int> enb_power(num_enb, 60);
+    std::vector<int> enb_power(num_enb, active_power);
     std::vector<int> vector_ue_per_enb(num_enb, ue_per_enb);
 
     // Initialize network scenario

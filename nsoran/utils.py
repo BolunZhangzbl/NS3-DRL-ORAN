@@ -60,6 +60,6 @@ def send_action(txp, fifo2, timestamp):
     assert isinstance(txp, str)
 
     txp = f"{timestamp}," + txp
-    os.write(fifo2, txp.encode("ytf-8"))
+    os.write(fifo2, txp.encode("utf-8"))
 
 

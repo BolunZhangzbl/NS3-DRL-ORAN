@@ -147,62 +147,54 @@ class DataParser:
 
 
 
-def test_fifo():
-    class Args:
-        time_step = 1  # 1 ms
-        num_enb = 4  # 4 base stations (cell IDs 1 to 4)
-
-    args = Args()
-    parser = DataParser(args)
-
-    df_kpms = parser.aggregate_kpms()
-    print(df_kpms)  # ✅ First print (no blocking)
-
-    fifo_path = "/tmp/test_fifo"
-
-    # Remove old FIFO if it exists
-    if os.path.exists(fifo_path):
-        os.remove(fifo_path)
-
-    # ✅ Create FIFO
-    os.mkfifo(fifo_path)
-
-    # ✅ Function to read FIFO (Runs in a separate thread)
-    def read_fifo():
-        with open(fifo_path, "r") as fifo:
-            data = fifo.read().strip()  # Read all at once
-            print("Read from FIFO:", data)
-            data_tx_power = list(map(int, data.split(",")))
-            print("Parsed Tx power:", data_tx_power)
-
-            # ✅ Add tx_power column
-            df_kpms['tx_power'] = data_tx_power
-            print(df_kpms)
-
-    # ✅ Start reader in a separate thread (to prevent blocking)
-    read_thread = threading.Thread(target=read_fifo)
-    read_thread.start()
-
-    # ✅ Small delay to ensure the reader is ready
-    time.sleep(0.5)
-
-    # ✅ Write to FIFO (Runs in main thread)
-    with open(fifo_path, "w") as fifo:
-        test_data = "10,20,30,40\n"  # Example Tx power values
-        fifo.write(test_data)
-
-    # ✅ Wait for the reader thread to finish
-    read_thread.join()
-
-
-if __name__ == '__main__':
-    # class Args:
-    #     time_step = 1  # 1 ms
-    #     num_enb = 4  # 4 base stations (cell IDs 1 to 4)
-    #
-    # args = Args()
-    # parser = DataParser(args)
-    #
-    # df_kpms = parser.aggregate_kpms()
-    # print(df_kpms)
-    test_fifo()
+# def test_fifo():
+#     class Args:
+#         time_step = 1  # 1 ms
+#         num_enb = 4  # 4 base stations (cell IDs 1 to 4)
+#
+#     args = Args()
+#     parser = DataParser(args)
+#
+#     df_kpms = parser.aggregate_kpms()
+#     print(df_kpms)  # ✅ First print (no blocking)
+#
+#     fifo_path = "/tmp/test_fifo"
+#
+#     # Remove old FIFO if it exists
+#     if os.path.exists(fifo_path):
+#         os.remove(fifo_path)
+#
+#     # ✅ Create FIFO
+#     os.mkfifo(fifo_path)
+#
+#     # ✅ Function to read FIFO (Runs in a separate thread)
+#     def read_fifo():
+#         with open(fifo_path, "r") as fifo:
+#             data = fifo.read().strip()  # Read all at once
+#             print("Read from FIFO:", data)
+#             data_tx_power = list(map(int, data.split(",")))
+#             print("Parsed Tx power:", data_tx_power)
+#
+#             # ✅ Add tx_power column
+#             df_kpms['tx_power'] = data_tx_power
+#             print(df_kpms)
+#
+#     # ✅ Start reader in a separate thread (to prevent blocking)
+#     read_thread = threading.Thread(target=read_fifo)
+#     read_thread.start()
+#
+#     # ✅ Small delay to ensure the reader is ready
+#     time.sleep(0.5)
+#
+#     # ✅ Write to FIFO (Runs in main thread)
+#     with open(fifo_path, "w") as fifo:
+#         test_data = "10,20,30,40\n"  # Example Tx power values
+#         fifo.write(test_data)
+#
+#     # ✅ Wait for the reader thread to finish
+#     read_thread.join()
+#
+#
+# if __name__ == '__main__':
+#
+#     test_fifo()

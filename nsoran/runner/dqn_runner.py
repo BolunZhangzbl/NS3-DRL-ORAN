@@ -79,7 +79,8 @@ class DQNRunner:
 
             # Record experience & train agent
             self.agent.record((state, action_idx, reward, next_state))
-            loss = self.agent.update().numpy()
+            loss_tensor = self.agent.update()
+            loss = loss_tensor.numpy() if isinstance(loss_tensor, tf.Tensor) else loss_tensor
             self.step_losses.append(loss)
 
             # Update target model periodically
@@ -136,4 +137,5 @@ class DQNRunner:
     def _save_results(self):
         """Save training metrics to file."""
         file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "lists"))
+        os.makedirs(file_path, exist_ok=True)
         save_lists(file_path, self.ep_rewards, self.step_rewards, self.avg_rewards, self.ep_losses, self.step_losses)

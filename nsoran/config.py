@@ -39,7 +39,7 @@ def get_config():
     parser = argparse.ArgumentParser(description="nsoran")
 
     # Env parameters
-    parser.add_argument('--use_cude', type=bool, action='store_false', defaul=False, help="Whether to use cuda")
+    parser.add_argument('--use_cuda', type=bool, action='store_false', defaul=False, help="Whether to use cuda")
     parser.add_argument('--use_wandb', type=bool, action='store_false', default=False, help='Whether to use wandb')
 
     # ORAN parameters
