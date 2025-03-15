@@ -149,13 +149,46 @@ class DataParser:
         return df
 
 
-# if __name__ == '__main__':
-#     class Args:
-#         time_step = 1  # 1 ms
-#         num_enb = 4  # 4 base stations (cell IDs 1 to 4)
-#
-#     args = Args()
-#     parser = DataParser(args)
-#
-#     df_kpms = parser.aggregate_kpms()
-#     print(df_kpms)
+def test_fifo():
+    class Args:
+        time_step = 1  # 1 ms
+        num_enb = 4  # 4 base stations (cell IDs 1 to 4)
+
+    args = Args()
+    parser = DataParser(args)
+
+    df_kpms = parser.aggregate_kpms()
+    print(df_kpms)
+
+    fifo_path = "/tmp/test_fifo"
+    if not os.path.exists(fifo_path):
+        os.mkfifo(fifo_path)
+
+    # Write fifo
+    with open(fifo_path, "w") as fifo:
+        test_data = "10,20,30,40\n"  # Example test Tx power values
+        fifo.write(test_data)
+        fifo.flush()
+
+    # Read fifo
+    with open(fifo_path, "r") as fifo:
+        data = fifo.read().strip()
+        print("Read from FIFO:", data)
+        data_tx_power = list(map(int, data.split(",")))  # Convert to int list
+        print("Parsed Tx power:", data_tx_power)
+
+    df_kpms['tx_power'] = data_tx_power
+    print(df_kpms)
+
+
+if __name__ == '__main__':
+    # class Args:
+    #     time_step = 1  # 1 ms
+    #     num_enb = 4  # 4 base stations (cell IDs 1 to 4)
+    #
+    # args = Args()
+    # parser = DataParser(args)
+    #
+    # df_kpms = parser.aggregate_kpms()
+    # print(df_kpms)
+    test_fifo()
