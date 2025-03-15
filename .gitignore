@@ -18,3 +18,6 @@ wireless-animation.xml
 
 # Ignore the specific Waf version directory
 .waf3-2.0.21-c6c9a875365426e5928462b9b74d40b5/
+
+*.pcap
+*.tr
