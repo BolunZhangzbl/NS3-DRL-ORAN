@@ -144,6 +144,7 @@ class DataParser:
         return df
 
 
+
 def test_fifo():
     class Args:
         time_step = 1  # 1 ms
@@ -153,33 +154,43 @@ def test_fifo():
     parser = DataParser(args)
 
     df_kpms = parser.aggregate_kpms()
-    print(df_kpms)
+    print(df_kpms)  # ✅ First print (no blocking)
 
     fifo_path = "/tmp/test_fifo"
 
-    # Remove old FIFO (to prevent conflicts)
+    # Remove old FIFO if it exists
     if os.path.exists(fifo_path):
         os.remove(fifo_path)
 
-    # Create a new FIFO
+    # ✅ Create FIFO
     os.mkfifo(fifo_path)
 
-    # ✅ FIX: Open FIFO in "r+" mode to prevent blocking
-    with open(fifo_path, "r+") as fifo:
-        test_data = "10,20,30,40\n"  # Example test Tx power values
+    # ✅ Function to read FIFO (Runs in a separate thread)
+    def read_fifo():
+        with open(fifo_path, "r") as fifo:
+            data = fifo.read().strip()  # Read all at once
+            print("Read from FIFO:", data)
+            data_tx_power = list(map(int, data.split(",")))
+            print("Parsed Tx power:", data_tx_power)
+
+            # ✅ Add tx_power column
+            df_kpms['tx_power'] = data_tx_power
+            print(df_kpms)
+
+    # ✅ Start reader in a separate thread (to prevent blocking)
+    read_thread = threading.Thread(target=read_fifo)
+    read_thread.start()
+
+    # ✅ Small delay to ensure the reader is ready
+    time.sleep(0.5)
+
+    # ✅ Write to FIFO (Runs in main thread)
+    with open(fifo_path, "w") as fifo:
+        test_data = "10,20,30,40\n"  # Example Tx power values
         fifo.write(test_data)
-        fifo.flush()
 
-        # ✅ Read immediately after writing (no blocking)
-        fifo.seek(0)  # Move to the beginning
-        data = fifo.read().strip()
-        print("Read from FIFO:", data)
-
-        data_tx_power = list(map(int, data.split(",")))  # Convert to int list
-        print("Parsed Tx power:", data_tx_power)
-
-    df_kpms['tx_power'] = data_tx_power
-    print(df_kpms)
+    # ✅ Wait for the reader thread to finish
+    read_thread.join()
 
 
 if __name__ == '__main__':
