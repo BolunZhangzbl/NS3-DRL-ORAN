@@ -9,18 +9,28 @@ from utils import *
 # -- Global Variables
 
 dict_kpms = dict(
-    throughput='size',
-    numusedrbs='...'
+    tp=['size'],
+    sinr=['sinr'],
+    prb=['sizeTb1'],
 )
 
 dict_columns = dict(
-    tp=['time', 'cellId', 'IMSI', 'RNTI', 'mcs', 'size', 'rv', 'ndi', 'ccId'],      # Cell specific
-    sinr=['time', 'cellId', 'IMSI', 'RNTI', 'rsrp', 'sinr', 'ComponentCarrierId']   # UE specific
+    tp=["time", "cellId", "IMSI", "RNTI", "txMode", "layer", "mcs", "size", "rv", "ndi", "correct", "ccId"],
+    sinr=['time', 'cellId', 'IMSI', 'RNTI', 'rsrp', 'sinr', 'ComponentCarrierId'],
+    prb=['time', 'cellId', 'IMSI', 'frame', 'sframe', 'RNTI', 'mcsTb1', 'sizeTb1', 'mcsTb2', 'sizeTb2', 'ccId']
 )
+
 
 dict_filenames = dict(
     tp='DlRxPhyStats.txt',
-    sinr='DlRsrpSinrStats.txt'
+    sinr='DlRsrpSinrStats.txt',
+    prb='DlMacStats.txt'
+)
+
+dict_fail = dict(
+    tp=[0],
+    sinr=[-10],
+    prb=[0]
 )
 
 
@@ -34,69 +44,75 @@ class DataParser:
         self.num_enb = args.num_enb
         self.last_read_time = None        # Store the last processed timestamp
 
-    def read_kpms(self, kpm_type='tp'):
-        assert kpm_type in dict_columns.keys()
+    def read_kpms(self, kpm_type):
+        assert kpm_type in dict_kpms
+
         columns = dict_columns.get(kpm_type)
+        usecols = ['time', 'cellId'] + dict_kpms.get(kpm_type)
         filename = dict_filenames.get(kpm_type)
 
         file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", filename))
 
         try:
             df = pd.read_csv(file_path, delim_whitespace=True, comment='%', names=columns,
-                             skiprows=1, index_col=False)
+                             skiprows=1, index_col=False, usecols=usecols)
+            print(df.head())
         except Exception as e:
             print(f"Error reading the file {filename}: {e}")
             return pd.DataFrame(), None
 
-        # Sample rows where time == max(time)
-        latest_time = df['time'].max()
+        # Parse time col
+        # We only set self.last_read_time once, e.g., tp
+        df = self.convert_time_to_ms(df)
         if self.last_read_time:
             df = df[df['time'] > self.last_read_time]
+        if kpm_type == 'prb':
+            latest_time = df['time'].max()
+            self.last_read_time = latest_time
 
         if df.empty:
-            return pd.DataFrame(), None
+            return pd.DataFrame()
 
-        # Update the last read timestamp
-        self.last_read_time = latest_time
+        df = df.drop(columns=['time'], errors='ignore')
 
-        # Process df
-        df = self.drop_id_cols(df)
-        df = self.filter_df_by_enbs(df)
-        df = self.filter_df_by_kpms(df)
-        df = self.fill_missing_cellid(df)
+        # Filter by cellId
+        if kpm_type == 'tp':
+            df = df.groupby('cellId', as_index=False).sum()
+            df['size'] = df['size'] / 8
+            df = df.rename(columns={'size': 'tp'})
+        elif kpm_type == 'sinr':
+            df = df.groupby('cellId', as_index=False).mean()
+        else:
+            df = df.groupby('cellId', as_index=False).sum()
+            df = df.rename(columns={'sizeTb1': 'prb'})
 
-        df_results = df.sort_values(by=['cellId'])
+        return df
 
-        return df_results, latest_time
+    def aggregate_kpms(self):
+        df_tp = self.read_kpms(kpm_type='tp')
+        df_sinr = self.read_kpms(kpm_type='sinr')
+        df_prb = self.read_kpms(kpm_type='prb')
 
-    def filter_df_by_enbs(self, df):
+        print(df_tp)
+        print(df_sinr)
+        print(df_prb)
+
+        df_aggregated = df_tp.merge(df_sinr, on='cellId', how='outer').merge(df_prb, on='cellId', how='outer')
+        df_aggregated = self.fill_missing_cellid(df_aggregated)
+
+        return df_aggregated
+
+    def convert_time_to_ms(self, df):
         """
-        Filter df by CellId for each eNB only if we select multiple timestamps
+        Convert time col to ms if its in sec
         """
-        df_results = df.groupby('cellId', as_index=False).sum()
+        if df['time'].max() < 1000:
+            df['time'] *= 1000
+            print(f"Convert sec to ms!")
+        else:
+            print("Already in ms!")
 
-        return df_results
-
-    def filter_df_by_kpms(self, df):
-        """
-        Compute throughput for required KPMs
-        """
-        df_copy = df.copy()
-
-        df_copy['throughput'] = df['size']/8
-
-        return df_copy
-
-    def drop_id_cols(self, df):
-        """
-        Drop ID columns
-        """
-        cols_to_drop = ['time', 'IMSI'] + [col for col in df.columns if 'Id' in col and col != 'cellId']
-        df = df.drop(columns=cols_to_drop, errors='ignore')
-
-        df_results = df.groupby('cellId', as_index=False).sum()
-
-        return df_results
+        return df
 
     def fill_missing_cellid(self, df):
         """
@@ -106,7 +122,7 @@ class DataParser:
         df['cellId'] = df['cellId'].astype(int)
 
         # Expected cell IDs
-        expected_cell_ids = set(range(1, self.num_enb + 1))
+        expected_cell_ids = set(range(1, self.num_enb+1))
 
         # Actual cell IDs in the DataFrame
         actual_cell_ids = set(df['cellId'].unique())
@@ -120,9 +136,9 @@ class DataParser:
 
         # Create a DataFrame for missing rows
         if missing_cell_ids:
-            missing_data = {col: 0 for col in df.columns}  # Dictionary with all columns set to 0
-            missing_rows = [{'cellId': cell_id, **missing_data} for cell_id in missing_cell_ids]
-            missing_df = pd.DataFrame(missing_rows)
+            missing_data = {col: 0 for col in df.columns}  # Initialize with zeros
+            missing_df = pd.DataFrame([missing_data] * len(missing_cell_ids))  # Create multiple rows
+            missing_df['cellId'] = list(missing_cell_ids)  # Assign correct cellId values
 
             # Concatenate the original DataFrame with the missing rows
             df = pd.concat([df, missing_df], ignore_index=True)
@@ -133,23 +149,13 @@ class DataParser:
         return df
 
 
-
 # if __name__ == '__main__':
 #     class Args:
 #         time_step = 1  # 1 ms
-#         num_enbs = 4  # 4 base stations (cell IDs 1 to 4)
+#         num_enb = 4  # 4 base stations (cell IDs 1 to 4)
 #
 #     args = Args()
 #     parser = DataParser(args)
 #
-#     df_kpms = parser.read_kpms(filename="DlTxPhyStats.txt")
+#     df_kpms = parser.aggregate_kpms()
 #     print(df_kpms)
-#     print(np.array(df_kpms))
-#
-#     # Filter data by eNBs
-#     df_filtered = parser.filter_df_by_enbs(df_kpms)
-#     print(df_filtered)
-#
-#     # Compute throughput
-#     df_with_tp = parser.filter_df_by_kpms(df_kpms)
-#     print(df_with_tp)
