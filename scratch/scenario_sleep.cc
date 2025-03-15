@@ -552,9 +552,9 @@ static ns3::GlobalValue g_sim_time ("sim_time", "Simulation Time in s",
                                      ns3::UintegerValue (30),
                                      ns3::MakeUintegerChecker<uint32_t> ());
 
-static ns3::GlobalValue g_sim_time ("active_power", "Power values for active status",
-                                     ns3::UintegerValue (44),
-                                     ns3::MakeUintegerChecker<uint32_t> ());
+static ns3::GlobalValue g_active_power ("active_power", "Power values for active status",
+                                        ns3::UintegerValue (44),
+                                        ns3::MakeUintegerChecker<uint32_t> ());
 
 int main(int argc, char *argv[])
 {
