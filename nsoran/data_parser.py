@@ -156,19 +156,25 @@ def test_fifo():
     print(df_kpms)
 
     fifo_path = "/tmp/test_fifo"
-    if not os.path.exists(fifo_path):
-        os.mkfifo(fifo_path)
 
-    # Write fifo
-    with open(fifo_path, "w") as fifo:
+    # Remove old FIFO (to prevent conflicts)
+    if os.path.exists(fifo_path):
+        os.remove(fifo_path)
+
+    # Create a new FIFO
+    os.mkfifo(fifo_path)
+
+    # ✅ FIX: Open FIFO in "r+" mode to prevent blocking
+    with open(fifo_path, "r+") as fifo:
         test_data = "10,20,30,40\n"  # Example test Tx power values
         fifo.write(test_data)
         fifo.flush()
 
-    # Read fifo
-    with open(fifo_path, "r") as fifo:
+        # ✅ Read immediately after writing (no blocking)
+        fifo.seek(0)  # Move to the beginning
         data = fifo.read().strip()
         print("Read from FIFO:", data)
+
         data_tx_power = list(map(int, data.split(",")))  # Convert to int list
         print("Parsed Tx power:", data_tx_power)
 
