@@ -85,7 +85,8 @@ void NetworkScenario::initialize(
             std::vector<int> enb_power,
             std::vector<int> ue_per_enb,
             int it_period,
-            int sim_time)
+            int sim_time,
+            int active_power)
 
     {
         this->num_enb = num_enb;
