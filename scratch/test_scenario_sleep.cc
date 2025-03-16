@@ -469,7 +469,7 @@ int main(int argc, char *argv[])
     int ue_per_enb = intValue.Get();
 
     g_it_interval.GetValue(intValue);
-    int it_interval = intValue.Get();
+    int it_period = intValue.Get();
 
     g_sim_time.GetValue(intValue);
     int sim_time = intValue.Get();
