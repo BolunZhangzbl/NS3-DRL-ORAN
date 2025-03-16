@@ -2,8 +2,20 @@
 
 # Environment and script configuration
 script="train_dqn.py"
-use_cuda=true  # Whether to use CUDA for GPU acceleration
-use_wandb=false  # Whether to log metrics to Weights & Biases
+use_cuda=True  # Whether to use CUDA for GPU acceleration
+use_wandb=False  # Whether to log metrics to Weights & Biases
+
+# Only add --use_wandb if the variable is True
+CUDA_ENABLED=""
+if [ "$use_cuda" = true ] ; then
+    CUDA_ENABLED="--use_cuda"
+fi
+
+# Only add --use_wandb if the variable is True
+WANDB_ENABLED=""
+if [ "$use_wandb" = true ] ; then
+    WANDB_ENABLED="--use_wandb"
+fi
 
 # ORAN parameters
 num_enb=4  # Number of eNBs
@@ -48,8 +60,8 @@ echo "-----------------------------------------------"
 if [ "$use_cuda" = true ]; then
     echo "Using CUDA..."
     CUDA_VISIBLE_DEVICES=0 python ${script} \
-        --use_cuda \
-        --use_wandb=${use_wandb} \
+        ${CUDA_ENABLED} \
+        ${WANDB_ENABLED} \
         --num_enb=${num_enb} \
         --ue_per_enb=${ue_per_enb} \
         --it_period=${it_period} \
@@ -67,7 +79,7 @@ if [ "$use_cuda" = true ]; then
 else
     echo "Running on CPU..."
     CUDA_VISIBLE_DEVICES="" python ${script} \
-        --use_wandb=${use_wandb} \
+        ${WANDB_ENABLED} \
         --num_enb=${num_enb} \
         --ue_per_enb=${ue_per_enb} \
         --it_period=${it_period} \
