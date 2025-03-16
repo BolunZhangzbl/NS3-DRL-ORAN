@@ -46,8 +46,6 @@ class NetworkScenario
         int min_power;
         int max_power;
 
-        Ptr<FlowMonitor> Monitor;
-        FlowMonitorHelper flowmon;
         ns3::Time last_ue_arrival;
         void ue_depart_callback();
         void ue_arrive_callback();
@@ -72,7 +70,6 @@ class NetworkScenario
         void callback_ue_spotted_at_enb(std::string context, const uint64_t imsi, const uint16_t cell_id, const uint16_t rnti);
         void callback_measurement_report_received(const uint64_t imsi, const uint16_t cell_id,  const uint16_t rnti, const LteRrcSap::MeasurementReport report);
         void setup_callbacks();
-        void printStats(FlowMonitorHelper &flowmonHelper, bool perFlowInfo);
 
         void dump_initial_state();
         void periodically_interact_with_agent();
@@ -97,7 +94,7 @@ void NetworkScenario::initialize(
         this->ue_per_enb = ue_per_enb;
         this->it_period = it_period;
         this->sim_time = sim_time;
-        this->active_power = 44;
+        this->active_power = active_power;
         this->min_power = 30;
         this->max_power = 60;
 
@@ -108,23 +105,17 @@ void NetworkScenario::initialize(
         this->apply_network_conf();
         this->create_remote_server();
         this->create_ue_applications();
-       // this->setup_callbacks();
+        this->setup_callbacks();
 }
 
 void NetworkScenario::run(){
-    // this->dump_initial_state();
+     this->dump_initial_state();
     this->periodically_interact_with_agent();
-
-    this->Monitor = this->flowmon.Install(this->ue_nodes);
-    this->Monitor = this->flowmon.Install(this->server_nodes);
-
-    // AnimationInterface anim ("wireless-animation.xml"); // Mandatory
+     AnimationInterface anim ("wireless-animation.xml"); // Mandatory
     // anim.SetMaxPktsPerTraceFile(0xFFFFFFFF);
 
     Simulator::Stop(Seconds(sim_time));
     Simulator::Run();
-
-    this->printStats(this->flowmon,true);
     Simulator::Destroy();
 }
 
@@ -219,12 +210,12 @@ void NetworkScenario::callback_measurement_report_received(
 {
     // An eNodeB has received a measurement report of neighboring cell signal
     // strengths from an attached UE. Dump interesting information to stdout
-    // std::cout << this->timestep() << " ms: Measurement report: "
-    //     << "Cell " << (int)cell_id
-    //     << " got report from IMSI " << imsi
-    //     << ": " << (int)cell_id
-    //     << "/" << (int)report.measResults.rsrpResult
-    //     << "/" << (int)report.measResults.rsrqResult;
+     std::cout << this->timestep() << " ms: Measurement report: "
+         << "Cell " << (int)cell_id
+         << " got report from IMSI " << imsi
+         << ": " << (int)cell_id
+         << "/" << (int)report.measResults.rsrpResult
+         << "/" << (int)report.measResults.rsrqResult;
 
     // There might be additional measurements to the one listed directly in the
     // data structure, hence we need to do some additional iteration
@@ -310,7 +301,7 @@ void NetworkScenario::periodically_interact_with_agent()
     }
 
     // Reschedule again after this->interaction_interval (default 100 ms)
-    Simulator::Schedule(MilliSeconds(100),&NetworkScenario::periodically_interact_with_agent, this);
+    Simulator::Schedule(MilliSeconds(1000),&NetworkScenario::periodically_interact_with_agent, this);
 }
 
 
@@ -460,52 +451,6 @@ void NetworkScenario::create_ue_applications()
     }
 }
 
- void NetworkScenario::printStats(FlowMonitorHelper &flowmon_helper, bool perFlowInfo)
-{
-    Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmon_helper.GetClassifier());
-    std::string proto;
-    Ptr<FlowMonitor> monitor = flowmon_helper.GetMonitor ();
-    std::map < FlowId, FlowMonitor::FlowStats > stats = monitor->GetFlowStats();
-    double totalTimeReceiving;
-    uint64_t totalPacketsReceived, totalPacketsDropped, totalBytesReceived;
-
-    totalBytesReceived = 0, totalPacketsDropped = 0, totalPacketsReceived = 0, totalTimeReceiving = 0;
-    for (std::map< FlowId, FlowMonitor::FlowStats>::iterator flow = stats.begin(); flow != stats.end(); flow++)
-    {
-      Ipv4FlowClassifier::FiveTuple  t = classifier->FindFlow(flow->first);
-      switch(t.protocol)
-       {
-       case(6):
-           proto = "TCP";
-           break;
-       case(17):
-           proto = "UDP";
-           break;
-       default:
-           exit(1);
-       }
-       totalBytesReceived += (double) flow->second.rxBytes * 8;
-       totalTimeReceiving += flow->second.timeLastRxPacket.GetSeconds ();
-       totalPacketsReceived += flow->second.rxPackets;
-       totalPacketsDropped += flow->second.txPackets - flow->second.rxPackets;
-       if (perFlowInfo) {
-         std::cout << "FlowID: " << flow->first << " (" << proto << " "
-                   << t.sourceAddress << " / " << t.sourcePort << " --> "
-                   << t.destinationAddress << " / " << t.destinationPort << ")" << std::endl;
-         std::cout << "  Tx Bytes: " << flow->second.txBytes << std::endl;
-         std::cout << "  Rx Bytes: " << flow->second.rxBytes << std::endl;
-         std::cout << "  Tx Packets: " << flow->second.txPackets << std::endl;
-         std::cout << "  Rx Packets: " << flow->second.rxPackets << std::endl;
-         std::cout << "  Time LastRxPacket: " << flow->second.timeLastRxPacket.GetSeconds () << "s" << std::endl;
-         std::cout << "  Lost Packets: " << flow->second.lostPackets << std::endl;
-         std::cout << "  Pkt Lost Ratio: " << ((double)flow->second.txPackets-(double)flow->second.rxPackets)/(double)flow->second.txPackets << std::endl;
-         std::cout << "  Throughput: " << ( ((double)flow->second.rxBytes*8) / (flow->second.timeLastRxPacket.GetSeconds ()) ) << "bps" << std::endl;
-         std::cout << "  Mean{Delay}: " << (flow->second.delaySum.GetSeconds()/flow->second.rxPackets) << std::endl;
-         std::cout << "  Mean{Jitter}: " << (flow->second.jitterSum.GetSeconds()/(flow->second.rxPackets)) << std::endl;
-       }
-     }
-}
-
 
 static ns3::GlobalValue g_num_enb ("num_enb", "Number of eNBs",
                                    ns3::UintegerValue (4),
@@ -520,7 +465,7 @@ static ns3::GlobalValue g_it_interval ("it_period", "Period to interact with DRL
                                        ns3::MakeUintegerChecker<uint32_t> ());
 
 static ns3::GlobalValue g_sim_time ("sim_time", "Simulation Time in s",
-                                     ns3::UintegerValue (30),
+                                     ns3::UintegerValue (5),
                                      ns3::MakeUintegerChecker<uint32_t> ());
 
 static ns3::GlobalValue g_active_power ("active_power", "Power values for active status",

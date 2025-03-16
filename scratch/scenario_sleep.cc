@@ -95,7 +95,7 @@ void NetworkScenario::initialize(
         this->ue_per_enb = ue_per_enb;
         this->it_period = it_period;
         this->sim_time = sim_time;
-        this->active_power = 44;
+        this->active_power = active_power;
 
         this->create_enb_nodes();
         this->create_ue_nodes();
