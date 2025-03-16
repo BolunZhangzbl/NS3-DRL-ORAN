@@ -1,8 +1,6 @@
 # -- Public Imports
-import logging
-import threading
 import subprocess
-import tensorflow as tf
+import time
 
 # -- Private Imports
 from nsoran.runner.dqn_runner import DQNRunner
@@ -16,6 +14,7 @@ from nsoran.config import get_config
 def run_scenario(args):
     """
     Run the ns-3 simulation (scenario_sleep.cc) with the given parameters.
+    This will block execution until NS-3 completes.
     """
     command = [
         "./waf", "--run",
@@ -23,65 +22,42 @@ def run_scenario(args):
         f"--it_period={args.it_period} --sim_time={args.sim_time}"
     ]
     print(f"Running simulation: {' '.join(command)}")
-    subprocess.run(command, check=True)
+
+    # Run NS-3 in a separate process
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    return process  # Return the process object so we can monitor it
+
 
 def run_drl(args):
+    """
+    Run the DRL agent to interact with NS-3 through FIFOs.
+    """
+    dqn_runner = DQNRunner(args)
+    print("Starting DQN training...")
+    dqn_runner.run()
+    print("DQN training completed.")
 
-    # Set up logging
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-    logger = logging.getLogger(__name__)
-
-    # Check for GPU availability
-    if args.use_cuda:
-        gpus = tf.config.list_physical_devices('GPU')
-        if gpus:
-            logger.info("Using GPU for computation...")
-            device = tf.device("GPU:0")
-        else:
-            logger.warning("GPU requested but not available. Falling back to CPU.")
-            device = tf.device("CPU")
-    else:
-        logger.info("Using CPU for computation...")
-        device = tf.device("CPU")
-
-    # Run DQN
-    try:
-        with device:
-            logger.info("Initializing DQN Runner...")
-            dqn_runner = DQNRunner(args)
-            logger.info("Starting DQN training...")
-            dqn_runner.run()
-            logger.info("DQN training completed successfully.")
-    except Exception as e:
-        logger.error(f"An error occurred during DQN execution: {e}")
-        raise
 
 def main():
     """
-    Main function to run the simulation and DRL agent simultaneously using multi-threading.
+    Main function to run NS-3 simulation and DRL agent sequentially.
     """
     args = get_config()
 
-    # Create a synchronization event
-    start_event = threading.Event()
+    # Step 1: Start NS-3 simulation
+    ns3_process = run_scenario(args)
 
-    # Create threads for simulation and DRL agent
-    simulation_thread = threading.Thread(target=run_scenario, args=(args, start_event))
-    drl_thread = threading.Thread(target=run_drl, args=(args, start_event))
+    # Step 2: Wait briefly to ensure NS-3 initializes
+    time.sleep(1)  # Give NS-3 some time to start
 
-    # Start threads
-    simulation_thread.start()
-    drl_thread.start()
+    # Step 3: Start the DRL agent
+    run_drl(args)
 
-    # Signal both threads to start simultaneously
-    print("Starting both simulation and DRL agent simultaneously...")
-    start_event.set()
+    # Step 4: Wait for NS-3 process to complete
+    ns3_process.wait()
+    print("NS-3 simulation has completed.")
 
-    # Wait for threads to finish
-    simulation_thread.join()
-    drl_thread.join()
-
-    print("Both simulation and DRL training have completed.")
 
 if __name__ == '__main__':
     main()
