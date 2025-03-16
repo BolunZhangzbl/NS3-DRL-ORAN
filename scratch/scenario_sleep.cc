@@ -303,12 +303,14 @@ void NetworkScenario::periodically_interact_with_agent()
     char rbuf[50];
     memset(rbuf, 0, sizeof(rbuf));
 
+    std::string received_data;
+
     // Read new Tx power from FIFO2 (DRL agent response)
     ssize_t bytesRead = read(fd2, rbuf, sizeof(rbuf) - 1);
     if (bytesRead > 0) {
         rbuf[bytesRead] = '\0';  // Null-terminate to avoid garbage characters
         // Convert to std::string for easy processing
-        std::string received_data(rbuf);
+        received_data = std::string(rbuf);  // Assign value instead of redeclaring
 
         // Remove trailing newline if it exists
         if (!received_data.empty() && received_data.back() == '\n') {
