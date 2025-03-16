@@ -17,7 +17,7 @@ def get_parser():
         --use_wandb      : Whether to log training metrics to Weights & Biases (default: False)
 
     ORAN parameters:
-        --num_enbs       : Number of eNBs (base stations) in the simulation (default: 4)
+        --num_enb       : Number of eNBs (base stations) in the simulation (default: 4)
         --num_ues        : Number of UEs (user equipment) per eNB (default: 3)
         --it_interval    : Interaction Interval between ORAN and agent in milliseconds (default: 100ms)
         --sim_time       : Total simulation time in seconds (default: 30s)

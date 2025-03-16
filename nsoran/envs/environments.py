@@ -16,7 +16,7 @@ class ORANSimEnv(gym.Env):
 
     def __init__(self, args):
         self.active_power = args.active_power
-        self.num_enbs = args.num_enbs
+        self.num_enb = args.num_enb
         self.latest_time = None
         self.done = False
 
@@ -34,7 +34,7 @@ class ORANSimEnv(gym.Env):
 
     def step(self, action):
 
-        assert len(action) == self.num_enbs
+        assert len(action) == self.num_enb
 
         self._send_action(action)                 # Send action to ns-3
 
@@ -87,13 +87,13 @@ class ORANSimEnv(gym.Env):
 
             power_values = [int(x) for x in data.split(",") if x.strip().isdigit()]
 
-            return power_values if power_values else [self.active_power] * self.num_enbs
+            return power_values if power_values else [self.active_power] * self.num_enb
 
         except (OSError, ValueError, FileNotFoundError) as e:
             print(f"Warning: Error reading {self.fifo1}: {e}, using default values.")
 
         # Return default values if there was an error
-        return [self.active_power] * self.num_enbs
+        return [self.active_power] * self.num_enb
 
     def _send_action(self, action):
         enbs_active_status = np.array(action)
