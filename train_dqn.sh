@@ -21,7 +21,7 @@ fi
 num_enb=4  # Number of eNBs
 ue_per_enb=3  # Number of UEs per eNB
 it_period=100  # Interaction Interval in milliseconds
-sim_time=300  # Simulation time in seconds
+sim_time=10  # Simulation time in seconds
 
 # DRL parameters
 max_step=100  # Maximum number of steps per episode
