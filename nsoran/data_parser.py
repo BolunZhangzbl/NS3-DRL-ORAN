@@ -42,7 +42,8 @@ class DataParser:
 
     def __init__(self, args):
 
-        self.time_step = args.it_period   # in ms
+        self.time_step = 0
+        self.it_period = args.it_period   # in ms
         self.num_enb = args.num_enb
         self.last_read_time = None        # Store the last processed timestamp
 
@@ -59,9 +60,9 @@ class DataParser:
             # Read the CSV file
             df = pd.read_csv(file_path, delim_whitespace=True, comment='%', names=columns,
                              skiprows=1, index_col=False, usecols=usecols)
-
+            self.time_step += 1
             print(f"Successfully read the file {filename}")
-            print(f"Initial DataFrame (Step 2):\n{df.head()}")  # Debug: Check DataFrame after read
+            print(f"Initial DataFrame (Step {self.time_step}):\n{df.head()}")  # Debug: Check DataFrame after read
         except Exception as e:
             print(f"Error reading the file {filename}: {e}")
             return pd.DataFrame(), None
@@ -76,7 +77,7 @@ class DataParser:
         print(f"DataFrame after filtering by time: {df.head()}")  # Debug: After filtering by time
 
         # Update last_read_time for 'prb'
-        if kpm_type == 'prb':
+        if self.time_step%3==0:
             latest_time = df['time'].max()
             self.last_read_time = latest_time
 
