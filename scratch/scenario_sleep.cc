@@ -390,7 +390,7 @@ void NetworkScenario::create_lte_network()
          Ptr<Node> node = this->enb_nodes.Get(i);
          this->lte_helper->SetFfrAlgorithmAttribute(
              "FrCellTypeId", UintegerValue((i % 3) + 1));
-         this->enb_devices.Add(this->lte_helper->InstallEnbDevice(node));
+         this->lte_helper->InstallEnbDevice(node);
      }
     // this->enb_devices = this->lte_helper->InstallEnbDevice(this->enb_nodes);
 
