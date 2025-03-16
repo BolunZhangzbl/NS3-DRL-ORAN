@@ -43,6 +43,8 @@ class NetworkScenario
         int it_period;
         int sim_time;
         int active_power;
+        int min_power;
+        int max_power;
 
         Ptr<FlowMonitor> Monitor;
         FlowMonitorHelper flowmon;
@@ -96,6 +98,8 @@ void NetworkScenario::initialize(
         this->it_period = it_period;
         this->sim_time = sim_time;
         this->active_power = 44;
+        this->min_power = 30;
+        this->max_power = 60;
 
         this->create_enb_nodes();
         this->create_ue_nodes();
