@@ -4,7 +4,7 @@ import time
 
 # -- Private Imports
 from nsoran.runner.dqn_runner import DQNRunner
-from nsoran.config import get_config
+from nsoran.config import get_parser
 
 # -- Global Variables
 
@@ -43,7 +43,8 @@ def main():
     """
     Main function to run NS-3 simulation and DRL agent sequentially.
     """
-    args = get_config()
+    parser = get_parser()
+    args = parser.parse_args()
 
     # Step 1: Start NS-3 simulation
     ns3_process = run_scenario(args)

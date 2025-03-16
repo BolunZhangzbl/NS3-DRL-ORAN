@@ -8,7 +8,7 @@ import argparse
 
 # -- Functions
 
-def get_config():
+def get_parser():
     """
     The configuration parser
 
