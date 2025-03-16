@@ -33,8 +33,6 @@ class ORANSimEnv(gym.Env):
         print("Opening FIFOs to send/receive...")
 
     def step(self, action):
-        print(f"\n\naction: {action}\n")
-        print(f"self.num_enb: {self.num_enb}\n\n")
         assert len(action) == self.num_enb
 
         self._send_action(action)                 # Send action to ns-3

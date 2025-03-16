@@ -56,27 +56,40 @@ class DataParser:
         file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", filename))
 
         try:
+            # Read the CSV file
             df = pd.read_csv(file_path, delim_whitespace=True, comment='%', names=columns,
                              skiprows=1, index_col=False, usecols=usecols)
+
+            print(f"Successfully read the file {filename}")
+            print(f"Initial DataFrame (Step 2):\n{df.head()}")  # Debug: Check DataFrame after read
         except Exception as e:
             print(f"Error reading the file {filename}: {e}")
             return pd.DataFrame(), None
 
-        # Parse time col
-        # We only set self.last_read_time once, e.g., tp
+        # Parse time col - Ensure conversion is working
         df = self.convert_time_to_ms(df)
+        print(f"DataFrame after time conversion: {df.head()}")  # Debug: After time conversion
+
+        # Only keep rows after last_read_time
         if self.last_read_time:
             df = df[df['time'] > self.last_read_time]
+        print(f"DataFrame after filtering by time: {df.head()}")  # Debug: After filtering by time
+
+        # Update last_read_time for 'prb'
         if kpm_type == 'prb':
             latest_time = df['time'].max()
             self.last_read_time = latest_time
 
+        # If DataFrame is empty, return early
         if df.empty:
+            print(f"Warning: DataFrame is empty after filtering, returning empty DataFrame.")
             return pd.DataFrame()
 
+        # Drop 'time' column
         df = df.drop(columns=['time'], errors='ignore')
+        print(f"DataFrame after dropping 'time' column: {df.head()}")  # Debug: After dropping time column
 
-        # Filter by cellId
+        # Process different kpm types
         if kpm_type == 'tp':
             df = df.groupby('cellId', as_index=False).sum()
             df['size'] = df['size'] / 8
@@ -86,6 +99,8 @@ class DataParser:
         else:
             df = df.groupby('cellId', as_index=False).sum()
             df = df.rename(columns={'sizeTb1': 'prb'})
+
+        print(f"Final DataFrame for {kpm_type}: {df.head()}")  # Debug: Final DataFrame after processing
 
         return df
 
