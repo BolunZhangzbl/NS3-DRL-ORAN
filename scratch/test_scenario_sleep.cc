@@ -427,25 +427,25 @@ void NetworkScenario::create_ue_applications()
 }
 
 
-//static ns3::GlobalValue g_num_enb ("num_enb", "Number of eNBs",
-//                                   ns3::UintegerValue (4),
-//                                   ns3::MakeUintegerChecker<uint32_t> ());
-//
-//static ns3::GlobalValue g_ue_per_enb ("ue_per_enb", "Number of UEs per eNB",
-//                                      ns3::UintegerValue (3),
-//                                      ns3::MakeUintegerChecker<uint32_t> ());
-//
-//static ns3::GlobalValue g_it_interval ("it_period", "Period to interact with DRL agent in ms",
-//                                       ns3::UintegerValue (100),
-//                                       ns3::MakeUintegerChecker<uint32_t> ());
-//
-//static ns3::GlobalValue g_sim_time ("sim_time", "Simulation Time in s",
-//                                     ns3::UintegerValue (5),
-//                                     ns3::MakeUintegerChecker<uint32_t> ());
-//
-//static ns3::GlobalValue g_active_power ("active_power", "Power values for active status",
-//                                        ns3::UintegerValue (44),
-//                                        ns3::MakeUintegerChecker<uint32_t> ());
+static ns3::GlobalValue g_num_enb ("num_enb", "Number of eNBs",
+                                   ns3::UintegerValue (4),
+                                   ns3::MakeUintegerChecker<int> ());
+
+static ns3::GlobalValue g_ue_per_enb ("ue_per_enb", "Number of UEs per eNB",
+                                      ns3::UintegerValue (3),
+                                      ns3::MakeUintegerChecker<int> ());
+
+static ns3::GlobalValue g_it_interval ("it_period", "Period to interact with DRL agent in ms",
+                                       ns3::UintegerValue (100),
+                                       ns3::MakeUintegerChecker<int> ());
+
+static ns3::GlobalValue g_sim_time ("sim_time", "Simulation Time in s",
+                                     ns3::UintegerValue (5),
+                                     ns3::MakeUintegerChecker<int> ());
+
+static ns3::GlobalValue g_active_power ("active_power", "Power values for active status",
+                                        ns3::UintegerValue (44),
+                                        ns3::MakeUintegerChecker<int> ());
 
 int main(int argc, char *argv[])
 {
@@ -458,67 +458,67 @@ int main(int argc, char *argv[])
     double maxYAxis = 5000;
 
     // Retrieve Global values
-//    UintegerValue uintegerValue;
-//
-//    GlobalValue::GetValueByName("num_enb", uintegerValue);
-//    uint32_t num_enb = uintegerValue.Get();
-//
-//    GlobalValue::GetValueByName("ue_per_enb", uintegerValue);
-//    uint32_t ue_per_enb = uintegerValue.Get();
-//
-//    GlobalValue::GetValueByName("it_period", uintegerValue);
-//    uint32_t it_interval = uintegerValue.Get();
-//
-//    GlobalValue::GetValueByName("sim_time", uintegerValue);
-//    uint32_t sim_time = uintegerValue.Get();
-//
-//    GlobalValue::GetValueByName("active_power", uintegerValue);
-//    uint32_t active_power = uintegerValue.Get();
+    UintegerValue uintegerValue;
 
-    int num_enb = 4;
-    int ue_per_enb = 7;
-    int it_period = 100;
-    int sim_time = 3;
-    int active_power = 44;
+    GlobalValue::GetValueByName("num_enb", uintegerValue);
+    int num_enb = uintegerValue.Get();
 
-    std::vector<std::vector<int>> enb_position{std::vector<int>{1250,1250,3},std::vector<int>{1250,3750,3} , std::vector<int>{3750,3750,3},std::vector<int>{3750,1250,3}};
-    std::vector<int> enb_power{60,60,60,60};
-    std::vector<int> ue_per_enb{7,7,7,7};
+    GlobalValue::GetValueByName("ue_per_enb", uintegerValue);
+    int ue_per_enb = uintegerValue.Get();
 
-//    // Define the center position
-//    Vector centerPosition(maxXAxis / 2, maxYAxis / 2, 3);
-//
-//    // Define a list to hold eNB positions
-//    std::vector<std::vector<int>> enb_position;
-//
-//    if (num_enb % 2 == 1) // Odd case: One eNB at the center
-//    {
-//        enb_position.push_back({static_cast<int>(centerPosition.x), static_cast<int>(centerPosition.y), 3});
-//    }
-//
-//    // Distribute remaining eNBs in a circle
-//    double radius = 1000; // Distance from the center
-//    for (auto i = 0; i < num_enb-1; i++)
-//    {
-//        double angle = (2 * M_PI * i) / num_enb; // Equally spaced angles
-//        int x = static_cast<int>(centerPosition.x + radius * cos(angle));
-//        int y = static_cast<int>(centerPosition.y + radius * sin(angle));
-//
-//        // Ensure positions stay within bounds
-//        x = std::max(0, std::min(static_cast<int>(maxXAxis), x));
-//        y = std::max(0, std::min(static_cast<int>(maxYAxis), y));
-//
-//        enb_position.push_back({x, y, 3});
-//    }
-//
-//    std::vector<int> enb_power(num_enb, active_power);
-//    std::vector<int> vector_ue_per_enb(num_enb, ue_per_enb);
+    GlobalValue::GetValueByName("it_period", uintegerValue);
+    int it_interval = uintegerValue.Get();
+
+    GlobalValue::GetValueByName("sim_time", uintegerValue);
+    int sim_time = uintegerValue.Get();
+
+    GlobalValue::GetValueByName("active_power", uintegerValue);
+    int active_power = uintegerValue.Get();
+
+//    int num_enb = 4;
+//    int ue_per_enb = 7;
+//    int it_period = 100;
+//    int sim_time = 3;
+//    int active_power = 44;
+
+//    std::vector<std::vector<int>> enb_position{std::vector<int>{1250,1250,3},std::vector<int>{1250,3750,3} , std::vector<int>{3750,3750,3},std::vector<int>{3750,1250,3}};
+//    std::vector<int> enb_power{60,60,60,60};
+//    std::vector<int> ue_per_enb{7,7,7,7};
+
+    // Define the center position
+    Vector centerPosition(maxXAxis / 2, maxYAxis / 2, 3);
+
+    // Define a list to hold eNB positions
+    std::vector<std::vector<int>> enb_position;
+
+    if (num_enb % 2 == 1) // Odd case: One eNB at the center
+    {
+        enb_position.push_back({static_cast<int>(centerPosition.x), static_cast<int>(centerPosition.y), 3});
+    }
+
+    // Distribute remaining eNBs in a circle
+    double radius = 1000; // Distance from the center
+    for (auto i = 0; i < num_enb-1; i++)
+    {
+        double angle = (2 * M_PI * i) / num_enb; // Equally spaced angles
+        int x = static_cast<int>(centerPosition.x + radius * cos(angle));
+        int y = static_cast<int>(centerPosition.y + radius * sin(angle));
+
+        // Ensure positions stay within bounds
+        x = std::max(0, std::min(static_cast<int>(maxXAxis), x));
+        y = std::max(0, std::min(static_cast<int>(maxYAxis), y));
+
+        enb_position.push_back({x, y, 3});
+    }
+
+    std::vector<int> enb_power(num_enb, active_power);
+    std::vector<int> vector_ue_per_enb(num_enb, ue_per_enb);
 
     // Initialize network scenario
     NetworkScenario *scenario;
     scenario = new NetworkScenario();
 
-    scenario->initialize(num_enb, enb_position, enb_power, ue_per_enb, it_period, sim_time, active_power);
+    scenario->initialize(num_enb, enb_position, enb_power, vector_ue_per_enb, it_period, sim_time, active_power);
     scenario->enable_trace();
     scenario->run();
 
