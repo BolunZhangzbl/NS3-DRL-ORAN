@@ -315,20 +315,28 @@ void NetworkScenario::create_lte_network()
     this->epc_helper = CreateObject<PointToPointEpcHelper>();
     this->lte_helper = CreateObject<LteHelper>();
     this->lte_helper->SetEpcHelper(this->epc_helper);
-
-
-
+    this->lte_helper->SetAttribute ("NumberOfComponentCarriers", UintegerValue (1));
+    this->lte_helper->SetAttribute ("EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
+    this->lte_helper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (100));
+    this->lte_helper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (100));
 
     // Set up a directional antenna, to allow 3-sector base stations
-    this->lte_helper->SetEnbAntennaModelType("ns3::ParabolicAntennaModel");
-    this->lte_helper->SetEnbAntennaModelAttribute("Beamwidth", DoubleValue(70.0));
+    // this->lte_helper->SetEnbAntennaModelType("ns3::ParabolicAntennaModel");
+    // this->lte_helper->SetEnbAntennaModelAttribute("Beamwidth", DoubleValue(70.0));
 
     // Activate handovers using a default RSRQ-based algorithm
     this->lte_helper->SetHandoverAlgorithmType("ns3::A2A4RsrqHandoverAlgorithm");
+    this->lte_helper->SetHandoverAlgorithmAttribute("ServingCellThreshold", UintegerValue(30));
+
 
     // Select "hard" frequency reuse (FR), which fully partitions the spectrum
     // into three equal parts and distributes those among the base stations
     this->lte_helper->SetFfrAlgorithmType("ns3::LteFrHardAlgorithm");
+    // this->lte_helper->SetEnbComponentCarrierManagerType("ns3::RrComponentCarrierManager");
+
+
+    // Config::SetDefault ("ns3::LteHelper::UseCa", BooleanValue (true));
+   // Config::SetDefault ("ns3::LteHelper::EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
 
     // Specify that the RLC layer of the LTE stack should use Acknowledged Mode
     // (AM) as the default mode for all data bearers. This as opposed to the
@@ -340,19 +348,20 @@ void NetworkScenario::create_lte_network()
     // are bad! RLC AM mode ensures reliable delivery across the radio link,
     // relieving TCP of that responsibility and not triggering any congestion
     // control algorithms in TCP. This greatly improves TCP performance
-    Config::SetDefault("ns3::LteEnbRrc::EpsBearerToRlcMapping",
-        EnumValue(LteEnbRrc::RLC_AM_ALWAYS));
+    // Config::SetDefault("ns3::LteEnbRrc::EpsBearerToRlcMapping",
+    //     EnumValue(LteEnbRrc::RLC_AM_ALWAYS));
 
     // Bump the maximum possible number of UEs connected per eNodeB
     Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(80));
 
     // Loop through the eNodeB nodes and set up the base stations
-    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        Ptr<Node> node = this->enb_nodes.Get(i);
-        this->lte_helper->SetFfrAlgorithmAttribute(
-            "FrCellTypeId", UintegerValue((i % 3) + 1));
-        this->lte_helper->InstallEnbDevice(node);
-    }
+    // for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+    //     Ptr<Node> node = this->enb_nodes.Get(i);
+    //     this->lte_helper->SetFfrAlgorithmAttribute(
+    //         "FrCellTypeId", UintegerValue((i % 3) + 1));
+    //     this->enb_devices.Add(this->lte_helper->InstallEnbDevice(node));
+    // }
+    this->enb_devices=this->lte_helper->InstallEnbDevice(this->enb_nodes);
 
     // Add an X2 interface between the eNodeBs, to enable handovers
     this->lte_helper->AddX2Interface(this->enb_nodes);
