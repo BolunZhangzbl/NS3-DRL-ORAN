@@ -514,7 +514,7 @@ int main(int argc, char *argv[])
     NetworkScenario *scenario;
     scenario = new NetworkScenario();
 
-    scenario->initialize(num_enb, enb_position, enb_power, vector_ue_per_enb, it_interval, sim_time, active_power);
+    scenario->initialize(num_enb, enb_position, enb_power, vector_ue_per_enb, it_period, sim_time, active_power);
     scenario->enable_trace();
     scenario->run();
 
