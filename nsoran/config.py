@@ -48,7 +48,7 @@ def get_parser():
     parser.add_argument('--num_enb', type=int, default=4, help="Number of eNBs")
     parser.add_argument('--ue_per_enb', type=int, default=3, help="Number of UEs per eNB")
     parser.add_argument('--it_period', type=int, default=100, help="Interaction Interval between ORAN and agent in (ms)")
-    parser.add_argument('--sim_time', type=int, default=30, help="Simulation time in (sec)")
+    parser.add_argument('--sim_time', type=int, default=3, help="Simulation time in (sec)")
     parser.add_argument('--active_power', type=int, default=44, help="Power values for active status")
 
     # DRL parameters
