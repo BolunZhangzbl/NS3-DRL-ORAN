@@ -10,13 +10,7 @@
 #include <random>
 #include <tuple>
 #include "ns3/netanim-module.h"
-#include "ns3/flow-monitor-module.h"
-#include "ns3/flow-monitor-helper.h"
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include<string.h>
+
 
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE("NetworkScenario");
@@ -46,13 +40,11 @@ class NetworkScenario
         int min_power;
         int max_power;
 
-        ns3::Time last_ue_arrival;
         void ue_depart_callback();
         void ue_arrive_callback();
 
         NodeContainer enb_nodes;
         NodeContainer ue_nodes;
-        NetDeviceContainer enb_devices;
 
         Ptr<LteHelper> lte_helper;
         Ptr<EpcHelper> epc_helper;
@@ -358,13 +350,13 @@ void NetworkScenario::create_lte_network()
     Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(80));
 
     // Loop through the eNodeB nodes and set up the base stations
-    // for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-    //     Ptr<Node> node = this->enb_nodes.Get(i);
-    //     this->lte_helper->SetFfrAlgorithmAttribute(
-    //         "FrCellTypeId", UintegerValue((i % 3) + 1));
-    //     this->enb_devices.Add(this->lte_helper->InstallEnbDevice(node));
-    // }
-    this->enb_devices=this->lte_helper->InstallEnbDevice(this->enb_nodes);
+     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+         Ptr<Node> node = this->enb_nodes.Get(i);
+         this->lte_helper->SetFfrAlgorithmAttribute(
+             "FrCellTypeId", UintegerValue((i % 3) + 1));
+         this->lte_helper->InstallEnbDevice(node);
+     }
+//    this->enb_devices=this->lte_helper->InstallEnbDevice(this->enb_nodes);
 
     // Add an X2 interface between the eNodeBs, to enable handovers
     this->lte_helper->AddX2Interface(this->enb_nodes);
@@ -419,12 +411,6 @@ void NetworkScenario::create_ue_applications()
     NetDeviceContainer ue_devices = this->lte_helper->InstallUeDevice(this->ue_nodes);
     Ipv4InterfaceContainer ue_ifaces = this->epc_helper->AssignUeIpv4Address(ue_devices);
 
-
-    // auto ueDev = DynamicCast<LteUeNetDevice> (ue_devices.Get(0));
-
-    // std::map< uint8_t, Ptr<ComponentCarrierUe> > ueCcMap = ueDev->GetCcMap ();
-    // ueDev->SetDlEarfcn (ueCcMap.at (1)->GetDlEarfcn());
-    // this->lte_helper->Attach(ueDev);
     // Attach the UEs to the LTE network
     this->lte_helper->Attach(ue_devices);
 
