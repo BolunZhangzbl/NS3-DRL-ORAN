@@ -460,11 +460,22 @@ int main(int argc, char *argv[])
     double maxYAxis = 5000;
 
     // Retrieve Global values
-    int num_enb = g_num_enb.GetValue().GetInt();
-    int ue_per_enb = g_ue_per_enb.GetValue().GetInt();
-    int it_interval = g_it_interval.GetValue().GetInt();
-    int sim_time = g_sim_time.GetValue().GetInt();
-    int active_power = g_active_power.GetValue().GetInt();
+    IntegerValue intValue;
+
+    g_num_enb.GetValue(intValue);
+    int num_enb = intValue.Get();
+
+    g_ue_per_enb.GetValue(intValue);
+    int ue_per_enb = intValue.Get();
+
+    g_it_interval.GetValue(intValue);
+    int it_interval = intValue.Get();
+
+    g_sim_time.GetValue(intValue);
+    int sim_time = intValue.Get();
+
+    g_active_power.GetValue(intValue);
+    int active_power = intValue.Get();
 
     // Define the center position
     Vector centerPosition(maxXAxis / 2, maxYAxis / 2, 3);
@@ -479,7 +490,7 @@ int main(int argc, char *argv[])
 
     // Distribute remaining eNBs in a circle
     double radius = 1000; // Distance from the center
-    for (auto i = 0; i < num_enb-1; i++)
+    for (int i = 0; i < num_enb-1; i++)
     {
         double angle = (2 * M_PI * i) / num_enb; // Equally spaced angles
         int x = static_cast<int>(centerPosition.x + radius * cos(angle));
