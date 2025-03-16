@@ -42,7 +42,7 @@ class DataParser:
 
     def __init__(self, args):
 
-        self.time_step = args.time_step   # in ms
+        self.time_step = args.it_period   # in ms
         self.num_enb = args.num_enb
         self.last_read_time = None        # Store the last processed timestamp
 
