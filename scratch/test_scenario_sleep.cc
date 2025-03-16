@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
 
     // Distribute remaining eNBs in a circle
     double radius = 1000; // Distance from the center
-    for (uint32_t i = 0; i < num_enb-1; i++)
+    for (auto i = 0; i < num_enb-1; i++)
     {
         double angle = (2 * M_PI * i) / num_enb; // Equally spaced angles
         int x = static_cast<int>(centerPosition.x + radius * cos(angle));
