@@ -37,8 +37,6 @@ class NetworkScenario
         int it_period;
         int sim_time;
         int active_power;
-        int min_power;
-        int max_power;
 
         void ue_depart_callback();
         void ue_arrive_callback();
@@ -87,8 +85,6 @@ void NetworkScenario::initialize(
         this->it_period = it_period;
         this->sim_time = sim_time;
         this->active_power = active_power;
-        this->min_power = 30;
-        this->max_power = 60;
 
         this->create_enb_nodes();
         this->create_ue_nodes();
@@ -271,25 +267,35 @@ void NetworkScenario::periodically_interact_with_agent()
     // Only ask for new cell parameters from the agent if the warmup phase is
     // over (in which case this->timestep() will return a non-negative number)
     if (this->timestep() >= 0) {
-        // Read in the new transmission power levels for all three cells
-        std::cout << this->timestep() << " ms: Agent action?" << std::endl;
-        int power = 0;
-        std::cout << this->timestep() << " Enter New Value of Tx Power" << std::endl;
+    // Read in the new transmission power levels for all eNBs
+    std::cout << this->timestep() << " ms: Agent action?" << std::endl;
+    std::cout << this->timestep() << " Enter New Value of Tx Power (0 or 1):" << std::endl;
 
-        for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-            if (!(std::cin >> power)) {
-                throw std::invalid_argument("Invalid action input");
-            }
-            if (power < this->min_power || power > this->max_power) {
-                power = std::min(std::max(power, this->min_power), this->max_power);
-
-            }
-
-            this->enb_power[i] = power;
+    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+        int power;
+        if (!(std::cin >> power)) {
+            // Clear the error flag and ignore invalid input
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cerr << "Error: Invalid input. Please enter 0 or 1." << std::endl;
+            i--; // Retry for the same eNB
+            continue;
         }
-        // Call the subclass-specific configuration update method
-        this->apply_network_conf();
+
+        // Validate input (must be 0 or 1)
+        if (power != 0 && power != 1) {
+            std::cerr << "Error: Input must be 0 or 1. Please try again." << std::endl;
+            i--; // Retry for the same eNB
+            continue;
+        }
+
+        // Set eNB power based on input
+        this->enb_power[i] = (power == 0) ? 0 : this->active_power;
     }
+
+    // Call the subclass-specific configuration update method
+    this->apply_network_conf();
+}
 
     // Reschedule again after this->interaction_interval (default 100 ms)
     Simulator::Schedule(MilliSeconds(1000),&NetworkScenario::periodically_interact_with_agent, this);
@@ -477,23 +483,6 @@ int main(int argc, char *argv[])
     g_active_power.GetValue(intValue);
     int active_power = intValue.Get();
 
-    // Debug prints
-    std::cout << "num_enb: " << num_enb << std::endl;
-    std::cout << "ue_per_enb: " << ue_per_enb << std::endl;
-    std::cout << "it_period: " << it_period << std::endl;
-    std::cout << "sim_time: " << sim_time << std::endl;
-    std::cout << "active_power: " << active_power << std::endl;
-
-    // Validate values
-    if (num_enb <= 0) {
-        std::cerr << "Error: num_enb must be positive!" << std::endl;
-        return -1;
-    }
-    if (ue_per_enb <= 0) {
-        std::cerr << "Error: ue_per_enb must be positive!" << std::endl;
-        return -1;
-    }
-
     // Define the center position
     Vector centerPosition(maxXAxis / 2, maxYAxis / 2, 3);
 
@@ -538,29 +527,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-//int main(int argc, char *argv[])
-//{
-//
-//    int num_enb = 4;
-//    int it_period = 100;
-//    int sim_time = 3;
-//    int active_power = 44;
-//
-//    std::vector<std::vector<int>> enb_position{std::vector<int>{1250,1250,3},std::vector<int>{1250,3750,3} , std::vector<int>{3750,3750,3},std::vector<int>{3750,1250,3}};
-//    std::vector<int> enb_power{60,60,60,60};
-//    std::vector<int> vector_ue_per_enb{7,7,7,7};
-//
-//    // Initialize network scenario
-//    NetworkScenario *scenario;
-//    scenario = new NetworkScenario();
-//
-//    scenario->initialize(num_enb, enb_position, enb_power, vector_ue_per_enb, it_period, sim_time, active_power);
-//    scenario->enable_trace();
-//    scenario->run();
-//
-//    return 0;
-//
-//}
-
 
