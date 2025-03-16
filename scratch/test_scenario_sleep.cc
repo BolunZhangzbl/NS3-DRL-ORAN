@@ -11,7 +11,6 @@
 #include <tuple>
 #include "ns3/netanim-module.h"
 
-
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE("NetworkScenario");
 
@@ -104,9 +103,8 @@ void NetworkScenario::run(){
      this->dump_initial_state();
     this->periodically_interact_with_agent();
      AnimationInterface anim ("wireless-animation.xml"); // Mandatory
-    // anim.SetMaxPktsPerTraceFile(0xFFFFFFFF);
 
-    Simulator::Stop(Seconds(sim_time));
+    Simulator::Stop(Seconds(this->sim_time));
     Simulator::Run();
     Simulator::Destroy();
 }
@@ -185,7 +183,7 @@ void NetworkScenario::callback_ue_spotted_at_enb(
 {
     // A given eNodeB (identified by cell ID) has become responsible for an UE
     // (identified by its IMSI), due to initial network attachment or handover
-    std::cout << this->timestep() << " ms: UE seen at cell: "<< "Cell " << (int)cell_id << " saw IMSI " << imsi << std::endl;
+    std::cout << this->timestep() << " ms: UE seen at cell: " << "Cell " << (int)cell_id << " saw IMSI " << imsi << std::endl;
 }
 void NetworkScenario::callback_ipv4_packet_received(
         PacketSizeMinMaxAvgTotalCalculator* packet_calc,
