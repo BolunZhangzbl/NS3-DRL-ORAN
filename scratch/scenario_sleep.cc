@@ -629,3 +629,4 @@ int main(int argc, char *argv[])
     scenario->run();
 
     return 0;
+}
