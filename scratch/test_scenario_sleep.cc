@@ -361,7 +361,7 @@ void NetworkScenario::periodically_interact_with_agent()
     }
     std::cout << std::endl;
 
-    / Only ask for new cell parameters from the agent if the warmup phase is
+    // Only ask for new cell parameters from the agent if the warmup phase is
     // over (in which case this->timestep() will return a non-negative number)
     if (this->timestep() >= 0) {
         // Read in the new transmission power levels for all three cells
