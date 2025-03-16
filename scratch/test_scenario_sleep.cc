@@ -355,13 +355,13 @@ void NetworkScenario::create_lte_network()
     Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(80));
 
     // Loop through the eNodeB nodes and set up the base stations
-    // for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-    //     Ptr<Node> node = this->enb_nodes.Get(i);
-    //     this->lte_helper->SetFfrAlgorithmAttribute(
-    //         "FrCellTypeId", UintegerValue((i % 3) + 1));
-    //     this->enb_devices.Add(this->lte_helper->InstallEnbDevice(node));
-    // }
-    this->enb_devices=this->lte_helper->InstallEnbDevice(this->enb_nodes);
+     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+         Ptr<Node> node = this->enb_nodes.Get(i);
+         this->lte_helper->SetFfrAlgorithmAttribute(
+             "FrCellTypeId", UintegerValue((i % 3) + 1));
+         this->lte_helper->InstallEnbDevice(node);
+     }
+    // this->enb_devices=this->lte_helper->InstallEnbDevice(this->enb_nodes);
 
     // Add an X2 interface between the eNodeBs, to enable handovers
     this->lte_helper->AddX2Interface(this->enb_nodes);

@@ -392,7 +392,6 @@ void NetworkScenario::create_lte_network()
              "FrCellTypeId", UintegerValue((i % 3) + 1));
          this->lte_helper->InstallEnbDevice(node);
      }
-    // this->enb_devices = this->lte_helper->InstallEnbDevice(this->enb_nodes);
 
     // Add an X2 interface between the eNodeBs, to enable handovers
     this->lte_helper->AddX2Interface(this->enb_nodes);
