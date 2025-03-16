@@ -477,6 +477,23 @@ int main(int argc, char *argv[])
     g_active_power.GetValue(intValue);
     int active_power = intValue.Get();
 
+    // Debug prints
+    std::cout << "num_enb: " << num_enb << std::endl;
+    std::cout << "ue_per_enb: " << ue_per_enb << std::endl;
+    std::cout << "it_period: " << it_period << std::endl;
+    std::cout << "sim_time: " << sim_time << std::endl;
+    std::cout << "active_power: " << active_power << std::endl;
+
+    // Validate values
+    if (num_enb <= 0) {
+        std::cerr << "Error: num_enb must be positive!" << std::endl;
+        return -1;
+    }
+    if (ue_per_enb <= 0) {
+        std::cerr << "Error: ue_per_enb must be positive!" << std::endl;
+        return -1;
+    }
+
     // Define the center position
     Vector centerPosition(maxXAxis / 2, maxYAxis / 2, 3);
 
@@ -518,14 +535,28 @@ int main(int argc, char *argv[])
 
 }
 
-
+//int main(int argc, char *argv[])
+//{
+//
 //    int num_enb = 4;
-//    int ue_per_enb = 7;
 //    int it_period = 100;
 //    int sim_time = 3;
 //    int active_power = 44;
-
+//
 //    std::vector<std::vector<int>> enb_position{std::vector<int>{1250,1250,3},std::vector<int>{1250,3750,3} , std::vector<int>{3750,3750,3},std::vector<int>{3750,1250,3}};
 //    std::vector<int> enb_power{60,60,60,60};
-//    std::vector<int> ue_per_enb{7,7,7,7};
+//    std::vector<int> vector_ue_per_enb{7,7,7,7};
+//
+//    // Initialize network scenario
+//    NetworkScenario *scenario;
+//    scenario = new NetworkScenario();
+//
+//    scenario->initialize(num_enb, enb_position, enb_power, vector_ue_per_enb, it_period, sim_time, active_power);
+//    scenario->enable_trace();
+//    scenario->run();
+//
+//    return 0;
+//
+//}
+
 
