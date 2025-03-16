@@ -24,8 +24,8 @@ class BaseAgentDQN:
     """
     def __init__(self, args):
         self.state_space = args.num_enb*4
-        self.action_space = args.num_enb
-        self.action_mapper = ActionMapper(minVal=0, maxVal=self.action_space)
+        self.action_space = 2**args.num_enb
+        self.action_mapper = ActionMapper(minVal=0, maxVal=self.action_space-1)
 
         # Buffer
         self.buffer_counter = 0

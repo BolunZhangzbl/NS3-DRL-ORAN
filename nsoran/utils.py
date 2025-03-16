@@ -32,7 +32,7 @@ class ActionMapper:
             raise ValueError(f"Action index {idx} is out of range [{self.minVal}, {self.maxVal}]")
 
             # Convert the integer index to a binary string
-        binary_str = format(idx, f"0{7}b")
+        binary_str = format(idx, f"0{int(np.log2(self.maxVal - self.minVal + 1))}b")
 
         # Convert the binary string to a list of boolean values
         return [bool(int(bit)) for bit in binary_str]

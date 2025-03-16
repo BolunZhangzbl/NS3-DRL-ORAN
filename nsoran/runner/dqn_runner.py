@@ -72,6 +72,8 @@ class DQNRunner:
 
         for step in range(1, self.args.max_step + 1):
             action, action_idx = self.agent.act(state)
+            print(f"\naction: {action}; action_idx: {action_idx}\n")
+
             next_state, reward, done = self.env.step(action)
 
             # Store step reward
