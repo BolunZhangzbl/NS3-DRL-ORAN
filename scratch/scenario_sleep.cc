@@ -104,7 +104,7 @@ void NetworkScenario::initialize(
         this->apply_network_conf();
         this->create_remote_server();
         this->create_ue_applications();
-       // this->setup_callbacks();
+        this->setup_callbacks();
 }
 
 void NetworkScenario::run(){
@@ -561,7 +561,7 @@ static ns3::GlobalValue g_it_interval("it_period", "Period to interact with DRL 
                                       ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecker for int
 
 static ns3::GlobalValue g_sim_time("sim_time", "Simulation Time in s",
-                                   ns3::IntegerValue(5), // Use IntegerValue for int
+                                   ns3::IntegerValue(3), // Use IntegerValue for int
                                    ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecker for int
 
 static ns3::GlobalValue g_active_power("active_power", "Power values for active status",

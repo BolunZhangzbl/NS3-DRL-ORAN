@@ -49,14 +49,19 @@ def main():
     # Step 1: Start NS-3 simulation
     ns3_process = run_scenario(args)
 
-    # Step 2: Wait briefly to ensure NS-3 initializes
-    time.sleep(1)  # Give NS-3 some time to start
+    # Step 2: Wait for NS-3 to start
+    time.sleep(1)
+    if ns3_process.poll() is not None:
+        print("Error: NS-3 simulation exited too early!")
+        exit(1)
 
     # Step 3: Start the DRL agent
     run_drl(args)
 
     # Step 4: Wait for NS-3 process to complete
-    ns3_process.wait()
+    stdout, stderr = ns3_process.communicate()
+    print(stdout.decode())
+    print(stderr.decode())
     print("NS-3 simulation has completed.")
 
 
