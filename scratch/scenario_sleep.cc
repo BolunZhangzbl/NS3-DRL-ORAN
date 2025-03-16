@@ -52,7 +52,7 @@ class NetworkScenario
 
         NodeContainer enb_nodes;
         NodeContainer ue_nodes;
-        NetDeviceContainer enb_devices;
+        // NetDeviceContainer enb_devices;
 
         Ptr<LteHelper> lte_helper;
         Ptr<EpcHelper> epc_helper;
@@ -357,6 +357,7 @@ void NetworkScenario::create_lte_network()
     this->epc_helper = CreateObject<PointToPointEpcHelper>();
     this->lte_helper = CreateObject<LteHelper>();
     this->lte_helper->SetEpcHelper(this->epc_helper);
+
     this->lte_helper->SetAttribute ("NumberOfComponentCarriers", UintegerValue (1));
     this->lte_helper->SetAttribute ("EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
     this->lte_helper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (100));
@@ -380,30 +381,18 @@ void NetworkScenario::create_lte_network()
     // Config::SetDefault ("ns3::LteHelper::UseCa", BooleanValue (true));
    // Config::SetDefault ("ns3::LteHelper::EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
 
-    // Specify that the RLC layer of the LTE stack should use Acknowledged Mode
-    // (AM) as the default mode for all data bearers. This as opposed to the
-    // ns-3 default which is Unacknowledged Mode (UM), see lte-enb-rrc.cc:1699
-    // and lte-helper.cc:618. This is important because TCP traffic between a
-    // UE and a remote host is very sensitive to packet loss. Packets lost
-    // between the UE and eNodeB will be treated by TCP as a signal that the
-    // network is congested -- but it might simply be that the radio conditions
-    // are bad! RLC AM mode ensures reliable delivery across the radio link,
-    // relieving TCP of that responsibility and not triggering any congestion
-    // control algorithms in TCP. This greatly improves TCP performance
-    // Config::SetDefault("ns3::LteEnbRrc::EpsBearerToRlcMapping",
-    //     EnumValue(LteEnbRrc::RLC_AM_ALWAYS));
 
     // Bump the maximum possible number of UEs connected per eNodeB
     Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(80));
 
     // Loop through the eNodeB nodes and set up the base stations
-    // for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-    //     Ptr<Node> node = this->enb_nodes.Get(i);
-    //     this->lte_helper->SetFfrAlgorithmAttribute(
-    //         "FrCellTypeId", UintegerValue((i % 3) + 1));
-    //     this->enb_devices.Add(this->lte_helper->InstallEnbDevice(node));
-    // }
-    this->enb_devices=this->lte_helper->InstallEnbDevice(this->enb_nodes);
+     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+         Ptr<Node> node = this->enb_nodes.Get(i);
+         this->lte_helper->SetFfrAlgorithmAttribute(
+             "FrCellTypeId", UintegerValue((i % 3) + 1));
+         this->enb_devices.Add(this->lte_helper->InstallEnbDevice(node));
+     }
+    // this->enb_devices = this->lte_helper->InstallEnbDevice(this->enb_nodes);
 
     // Add an X2 interface between the eNodeBs, to enable handovers
     this->lte_helper->AddX2Interface(this->enb_nodes);
