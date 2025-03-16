@@ -9,6 +9,7 @@
 #include <cmath>
 #include <random>
 #include <tuple>
+#include <vector>
 #include "ns3/netanim-module.h"
 
 using namespace ns3;
@@ -427,25 +428,26 @@ void NetworkScenario::create_ue_applications()
 }
 
 
-static ns3::GlobalValue g_num_enb ("num_enb", "Number of eNBs",
-                                   ns3::UintegerValue (4),
-                                   ns3::MakeUintegerChecker<int> ());
+// GlobalValue declarations
+static ns3::GlobalValue g_num_enb("num_enb", "Number of eNBs",
+                                  ns3::IntegerValue(4), // Use IntegerValue for int
+                                  ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecker for int
 
-static ns3::GlobalValue g_ue_per_enb ("ue_per_enb", "Number of UEs per eNB",
-                                      ns3::UintegerValue (3),
-                                      ns3::MakeUintegerChecker<int> ());
+static ns3::GlobalValue g_ue_per_enb("ue_per_enb", "Number of UEs per eNB",
+                                     ns3::IntegerValue(3), // Use IntegerValue for int
+                                     ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecker for int
 
-static ns3::GlobalValue g_it_interval ("it_period", "Period to interact with DRL agent in ms",
-                                       ns3::UintegerValue (100),
-                                       ns3::MakeUintegerChecker<int> ());
+static ns3::GlobalValue g_it_interval("it_period", "Period to interact with DRL agent in ms",
+                                      ns3::IntegerValue(100), // Use IntegerValue for int
+                                      ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecker for int
 
-static ns3::GlobalValue g_sim_time ("sim_time", "Simulation Time in s",
-                                     ns3::UintegerValue (5),
-                                     ns3::MakeUintegerChecker<int> ());
+static ns3::GlobalValue g_sim_time("sim_time", "Simulation Time in s",
+                                   ns3::IntegerValue(5), // Use IntegerValue for int
+                                   ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecker for int
 
-static ns3::GlobalValue g_active_power ("active_power", "Power values for active status",
-                                        ns3::UintegerValue (44),
-                                        ns3::MakeUintegerChecker<int> ());
+static ns3::GlobalValue g_active_power("active_power", "Power values for active status",
+                                       ns3::IntegerValue(44), // Use IntegerValue for int
+                                       ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecke
 
 int main(int argc, char *argv[])
 {
@@ -458,32 +460,11 @@ int main(int argc, char *argv[])
     double maxYAxis = 5000;
 
     // Retrieve Global values
-    UintegerValue uintegerValue;
-
-    GlobalValue::GetValueByName("num_enb", uintegerValue);
-    int num_enb = uintegerValue.Get();
-
-    GlobalValue::GetValueByName("ue_per_enb", uintegerValue);
-    int ue_per_enb = uintegerValue.Get();
-
-    GlobalValue::GetValueByName("it_period", uintegerValue);
-    int it_interval = uintegerValue.Get();
-
-    GlobalValue::GetValueByName("sim_time", uintegerValue);
-    int sim_time = uintegerValue.Get();
-
-    GlobalValue::GetValueByName("active_power", uintegerValue);
-    int active_power = uintegerValue.Get();
-
-//    int num_enb = 4;
-//    int ue_per_enb = 7;
-//    int it_period = 100;
-//    int sim_time = 3;
-//    int active_power = 44;
-
-//    std::vector<std::vector<int>> enb_position{std::vector<int>{1250,1250,3},std::vector<int>{1250,3750,3} , std::vector<int>{3750,3750,3},std::vector<int>{3750,1250,3}};
-//    std::vector<int> enb_power{60,60,60,60};
-//    std::vector<int> ue_per_enb{7,7,7,7};
+    int num_enb = g_num_enb.GetValue().GetInt();
+    int ue_per_enb = g_ue_per_enb.GetValue().GetInt();
+    int it_interval = g_it_interval.GetValue().GetInt();
+    int sim_time = g_sim_time.GetValue().GetInt();
+    int active_power = g_active_power.GetValue().GetInt();
 
     // Define the center position
     Vector centerPosition(maxXAxis / 2, maxYAxis / 2, 3);
@@ -525,3 +506,15 @@ int main(int argc, char *argv[])
     return 0;
 
 }
+
+
+//    int num_enb = 4;
+//    int ue_per_enb = 7;
+//    int it_period = 100;
+//    int sim_time = 3;
+//    int active_power = 44;
+
+//    std::vector<std::vector<int>> enb_position{std::vector<int>{1250,1250,3},std::vector<int>{1250,3750,3} , std::vector<int>{3750,3750,3},std::vector<int>{3750,1250,3}};
+//    std::vector<int> enb_power{60,60,60,60};
+//    std::vector<int> ue_per_enb{7,7,7,7};
+
