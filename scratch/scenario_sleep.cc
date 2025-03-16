@@ -286,25 +286,36 @@ void NetworkScenario::periodically_interact_with_agent()
 
     std::cout<<"Starting to send \n";
     std::stringstream ss;
-    // fflush(stdout);
-
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
         ss << this->enb_power[i] << ",";
     }
     std::string tx_power_str = ss.str();
     std::cout << "Current Tx Power: " << tx_power_str << std::endl;
 
-    // Send the power levels through FIFO1
-    write(fd1, tx_power_str.c_str(), tx_power_str.size());
+    // Write the Tx power levels to fifo1
+    if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
+        std::cerr << "Error: Failed to write to fifo1" << std::endl;
+        close(fd1);
+        close(fd2);
+        return;
+    }
 
     char rbuf[50];
     memset(rbuf, 0, sizeof(rbuf));
 
-    // Read from FIFO2 (DRL agent response)
+    // Read new Tx power from FIFO2 (DRL agent response)
     ssize_t bytesRead = read(fd2, rbuf, sizeof(rbuf) - 1);
     if (bytesRead > 0) {
         rbuf[bytesRead] = '\0';  // Null-terminate to avoid garbage characters
-        std::cout << "Received new Tx Power: " << rbuf << std::endl;
+        // Convert to std::string for easy processing
+        std::string received_data(rbuf);
+
+        // Remove trailing newline if it exists
+        if (!received_data.empty() && received_data.back() == '\n') {
+            received_data.pop_back();
+        }
+
+        std::cout << this->timestep() << " ms: Received new Tx Power: " << received_data << std::endl;
     } else {
         std::cerr << "Error: No data received from DRL agent" << std::endl;
         close(fd1);
@@ -314,23 +325,32 @@ void NetworkScenario::periodically_interact_with_agent()
 
     // Parse received action vector (binary values)
     std::vector<int> action_vector;
-    std::stringstream action_stream(rbuf);
+    std::stringstream action_stream(received_data);
     std::string token;
 
     while (std::getline(action_stream, token, ',')) {
         try {
             int action = std::stoi(token);
+            if (action != 0 && action != 1) {
+                std::cerr << "Error: Invalid action value (must be 0 or 1): " << token << std::endl;
+                continue;
+            }
             action_vector.push_back(action);
         } catch (std::exception &e) {
             std::cerr << "Error parsing action value: " << token << std::endl;
         }
     }
 
+    if (action_vector.size() != this->enb_nodes.GetN()) {
+        std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
+        close(fd1);
+        close(fd2);
+        return;
+    }
+
     // Apply actions: Set power to zero for eNBs in sleep mode (0), else set to 44
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        if (i < action_vector.size()) {  // Ensure index is valid
-            this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
-        }
+        this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
     }
 
     this->apply_network_conf();
@@ -339,7 +359,7 @@ void NetworkScenario::periodically_interact_with_agent()
     close(fd2);
 
     // Reschedule again after this->interaction_interval (default 100 ms)
-    Simulator::Schedule(MilliSeconds(it_period),&NetworkScenario::periodically_interact_with_agent, this);
+    Simulator::Schedule(MilliSeconds(this->it_period),&NetworkScenario::periodically_interact_with_agent, this);
 }
 
 
