@@ -4,6 +4,8 @@ import gym
 import time
 import json
 import logging
+
+import numpy as np
 import posix_ipc
 
 # -- Private Imports
@@ -102,7 +104,10 @@ class ORANSimEnv(gym.Env):
 
     def _send_action(self, action):
         """Write the action to the JSON file."""
-        action_data = {'actions': action.tolist()}  # Converting the action to a list for JSON storage
+        if isinstance(action, np.ndarray):
+            action = action.tolist()
+
+        action_data = {'actions': action}  # Converting the action to a list for JSON storage
 
         try:
             with open(self.actions_file, 'w') as f:
