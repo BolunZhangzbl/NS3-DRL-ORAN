@@ -1,14 +1,16 @@
 # -- Public Imports
+import os
 import gym
-import numpy as np
-
+import time
+import logging
+import posix_ipc
 
 # -- Private Imports
 from nsoran.data_parser import *
 from nsoran.utils import *
 
 # -- Global Variables
-
+logging.basicConfig(level=logging.INFO)
 
 # -- Functions
 
@@ -27,15 +29,32 @@ class ORANSimEnv(gym.Env):
         self.reward_weights = [0.4, 0.4, 0.1, -0.1]
         self.reward_threshold = int(1e6)
 
-        # link to fifo
-        self.fifo1 = os.open("/home/bolun/ns-3-dev/fifo1", os.O_RDONLY)
+        # FIFO setup
+        self.fifo1_path = "/home/bolun/ns-3-dev/fifo1"
+        self.fifo2_path = "/home/bolun/ns-3-dev/fifo2"
+
+        self.fifo1 = os.open("/home/bolun/ns-3-dev/fifo1", os.O_RDONLY | os.O_NONBLOCK)
         self.fifo2 = os.open("/home/bolun/ns-3-dev/fifo2", os.O_WRONLY)
-        print("Opening FIFOs to send/receive...")
+
+        # Semaphore connections
+        try:
+            self.ns3_ready = posix_ipc.Semaphore("/ns3_ready")
+            self.drl_ready = posix_ipc.Semaphore("/drl_ready")
+        except posix_ipc.ExistentialError as e:
+            logging.error("Semaphore not found. Ensure NS-3 has initialized them in /dev/shm/")
+            raise e
+
+        print("Opening FIFOs and Semaphores for communication...")
 
     def step(self, action):
         assert len(action) == self.num_enb
 
-        self._send_action(action)                 # Send action to ns-3
+        # STEP 1: Wait for NS-3 to finish and DRL to send actions
+        self.ns3_ready.acquire()                 # Block until NS-3 signals it's ready
+        self._send_action(action)                 # Send action to NS-3
+
+        # STEP 2: Wait for NS-3 to update and be ready with the next state
+        self.drl_ready.release()                  # Signal DRL is ready for new data
 
         next_state = self._get_obs()              # Wait for ns-3 update, then get new state
         reward = self._get_reward(next_state)     # Calculate the reward based on the new state after performing action
@@ -45,8 +64,8 @@ class ORANSimEnv(gym.Env):
 
     def reset(self):
         self.done = False
-
         state = self._get_obs()
+
         return state
 
     def _get_obs(self):
@@ -63,7 +82,6 @@ class ORANSimEnv(gym.Env):
         return data_state
 
     def _get_reward(self, data_state):
-
         data_reward = data_state.reshape(4, 4)
         reward = np.dot(data_reward, self.reward_weights).sum()
 
@@ -76,9 +94,6 @@ class ORANSimEnv(gym.Env):
     def _read_fifo(self):
         """Read from FIFO safely, returning default values on error."""
         try:
-            if not os.path.exists(self.fifo1):
-                raise FileNotFoundError(f"FIFO {self.fifo1} does not exist.")
-
             data = os.read(self.fifo1, 1024).decode("utf-8", errors="ignore").strip()
 
             if not data:

@@ -2,16 +2,39 @@
 
 # Environment and script configuration
 script="train_dqn.py"
+
+# Default values (as per the parser default)
 use_cuda=True  # Whether to use CUDA for GPU acceleration
 use_wandb=False  # Whether to log metrics to Weights & Biases
 
-# Only add --use_wandb if the variable is True
+# Parse command-line arguments
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case $key in
+        --use_cuda)
+            use_cuda=false
+            shift
+            ;;
+        --use_wandb)
+            use_wandb=true
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+# Conditional flag settings based on parsed arguments
 CUDA_ENABLED=""
 if [ "$use_cuda" = true ] ; then
     CUDA_ENABLED="--use_cuda"
+else
+    CUDA_ENABLED=""
 fi
 
-# Only add --use_wandb if the variable is True
 WANDB_ENABLED=""
 if [ "$use_wandb" = true ] ; then
     WANDB_ENABLED="--use_wandb"
@@ -35,7 +58,7 @@ epsilon_decay=0.999  # Decay rate for exploration rate
 batch_size=128  # Batch size for training
 seed=42  # Random seed for reproducibility
 
-# Run the training script
+# Echo the configuration
 echo "Starting training with the following configuration:"
 echo "-----------------------------------------------"
 echo "ORAN Parameters:"

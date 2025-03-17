@@ -39,7 +39,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description="nsoran")
 
     # Env parameters
-    parser.add_argument('--no_cuda', dest='use_cuda', action='store_false', help="Disable CUDA (default: enabled)")
+    parser.add_argument('--use_cuda', action='store_false', help="Disable CUDA (default: enabled)")
     parser.add_argument('--use_wandb', action='store_true', help="Enable Weights & Biases logging (default: disabled)")
     parser.set_defaults(use_cuda=True)
     parser.set_defaults(use_wandb=False)

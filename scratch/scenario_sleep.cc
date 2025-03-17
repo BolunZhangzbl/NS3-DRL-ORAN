@@ -6,17 +6,19 @@
 #include "ns3/applications-module.h"
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-helper.h"
-#include <cmath>
-#include <random>
-#include <tuple>
 #include "ns3/netanim-module.h"
 #include "ns3/flow-monitor-module.h"
 #include "ns3/flow-monitor-helper.h"
+#include <cmath>
+#include <random>
+#include <tuple>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include<string.h>
+#include<iostream>
+#include<semaphore.h>
 
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE("NetworkScenario");
@@ -43,6 +45,9 @@ class NetworkScenario
         int it_period;
         int sim_time;
         int active_power;
+
+        sem_t *ns3_ready;
+        sem_t *drl_ready;
 
         Ptr<FlowMonitor> Monitor;
         FlowMonitorHelper flowmon;
@@ -96,6 +101,15 @@ void NetworkScenario::initialize(
         this->it_period = it_period;
         this->sim_time = sim_time;
         this->active_power = active_power;
+
+        // Initialize semaphores
+        this->ns3_ready = sem_open("/ns3_ready", O_CREAT, 0644, 0);  // ns3_ready: 0 initially
+        this->drl_ready = sem_open("/drl_ready", O_CREAT, 0644, 0);  // drl_ready: 0 initially
+
+        if (this->ns3_ready == SEM_FAILED || this->drl_ready == SEM_FAILED) {
+            std::cerr << "Error: Could not open semaphores." << std::endl;
+            exit(1);
+        }
 
         this->create_enb_nodes();
         this->create_ue_nodes();
@@ -268,13 +282,8 @@ void NetworkScenario::dump_initial_state()
 
 void NetworkScenario::periodically_interact_with_agent()
 {
-    // Dump relevant simulation state for each UE to stdout. Currently we are
-    // interested in 2D position and IPv4 bytes received since last time
-    // for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
-    //     Ptr<Node> node = this->ue_nodes.Get(i);
-    //     Vector position = node->GetObject<MobilityModel>()->GetPosition();
-    //     std::cout << this->timestep() << " ms: UE state: "    << "IMSI " << (i + 1)    << " at " << position.x << " " << position.y<< std::endl;
-    // }
+    /** STEP 1: NS-3 waits for DRL agent to be ready **/
+    sem_wait(this->drl_ready);
 
     int fd1 = open("fifo1", O_WRONLY);
     int fd2 = open("fifo2", O_RDONLY);
@@ -284,6 +293,7 @@ void NetworkScenario::periodically_interact_with_agent()
         return;
     }
 
+    // Prepare state info (Tx power)
     std::cout<<"Starting to send \n";
     std::stringstream ss;
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
@@ -292,13 +302,19 @@ void NetworkScenario::periodically_interact_with_agent()
     std::string tx_power_str = ss.str();
     std::cout << "Current Tx Power: " << tx_power_str << std::endl;
 
-    // Write the Tx power levels to fifo1
+    // Write the Tx power to fifo1
     if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
         std::cerr << "Error: Failed to write to fifo1" << std::endl;
         close(fd1);
         close(fd2);
         return;
     }
+
+    // Signal DRL agent that new state is available
+    sem_post(this->ns3_ready);
+
+    /** STEP 2: NS-3 waits for DRL to send new actions **/
+    sem_wait(this->drl_ready);
 
     char rbuf[50];
     memset(rbuf, 0, sizeof(rbuf));
@@ -350,7 +366,7 @@ void NetworkScenario::periodically_interact_with_agent()
         return;
     }
 
-    // Apply actions: Set power to zero for eNBs in sleep mode (0), else set to 44
+    /** STEP 3: Apply actions: Set power to zero for eNBs in sleep mode (0), else set to 44 **/
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
         this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
     }
@@ -359,6 +375,9 @@ void NetworkScenario::periodically_interact_with_agent()
 
     close(fd1);
     close(fd2);
+
+    // Signal DRL agent that NS-3 is ready for the next cycle
+    sem_post(this->ns3_ready);
 
     // Reschedule again after this->interaction_interval (default 100 ms)
     Simulator::Schedule(MilliSeconds(this->it_period),&NetworkScenario::periodically_interact_with_agent, this);

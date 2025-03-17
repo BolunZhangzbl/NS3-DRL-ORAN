@@ -29,12 +29,6 @@ dict_filenames = dict(
     prb='DlMacStats.txt'
 )
 
-dict_fail = dict(
-    tp=[0],
-    sinr=[-10],
-    prb=[0]
-)
-
 
 # -- Functions
 
