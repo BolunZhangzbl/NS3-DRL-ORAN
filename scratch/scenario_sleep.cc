@@ -305,7 +305,7 @@ void NetworkScenario::dump_initial_state()
 
 void NetworkScenario::periodically_interact_with_agent()
 {
-    // Step 1: Check if we are in the first cycle (timestep < 100ms)
+    // Step 1: Wait for DRL agent to send actions after timestep >= 100ms
     if (this->timestep() >= 100) {
         sem_wait(this->drl_ready);  // Wait for DRL agent to be ready
     }
@@ -327,12 +327,16 @@ void NetworkScenario::periodically_interact_with_agent()
     }
 
     // Write Tx power to JSON file
-    std::ofstream tx_file("tx_power.json");
-    if (tx_file.is_open()) {
-        tx_file << tx_power_json.dump();  // Write JSON to file
-        tx_file.close();
-    } else {
-        std::cerr << "Error: Could not open tx_power.json for writing" << std::endl;
+    try {
+        std::ofstream tx_file("tx_power.json");
+        if (tx_file.is_open()) {
+            tx_file << tx_power_json.dump();  // Write JSON to file
+            tx_file.close();
+        } else {
+            throw std::ios_base::failure("Could not open tx_power.json for writing");
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error writing to tx_power.json: " << e.what() << std::endl;
         return;
     }
 
@@ -343,37 +347,41 @@ void NetworkScenario::periodically_interact_with_agent()
     sem_wait(this->drl_ready);
 
     // Read action from JSON file
-    std::ifstream action_file("actions.json");
-    if (!action_file.is_open()) {
-        std::cerr << "Error: Could not open actions.json for reading" << std::endl;
-        return;
-    }
-
-    json action_json;
-    action_file >> action_json;  // Read JSON data into the action_json object
-
-    // Parse the action vector
-    std::vector<int> action_vector;
-    for (auto& action : action_json) {
-        int action_value = action.get<int>();
-        if (action_value != 0 && action_value != 1) {
-            std::cerr << "Error: Invalid action value (must be 0 or 1): " << action_value << std::endl;
-            continue;
+    try {
+        std::ifstream action_file("actions.json");
+        if (!action_file.is_open()) {
+            throw std::ios_base::failure("Could not open actions.json for reading");
         }
-        action_vector.push_back(action_value);
-    }
 
-    if (action_vector.size() != this->enb_nodes.GetN()) {
-        std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
+        json action_json;
+        action_file >> action_json;  // Read JSON data into the action_json object
+
+        // Parse the action vector
+        std::vector<int> action_vector;
+        for (auto& action : action_json) {
+            int action_value = action.get<int>();
+            if (action_value != 0 && action_value != 1) {
+                std::cerr << "Error: Invalid action value (must be 0 or 1): " << action_value << std::endl;
+                continue;
+            }
+            action_vector.push_back(action_value);
+        }
+
+        if (action_vector.size() != this->enb_nodes.GetN()) {
+            std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
+            return;
+        }
+
+        // Step 3: Apply actions to the eNB nodes based on the action vector
+        for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+            this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
+        }
+
+        this->apply_network_conf();
+    } catch (const std::exception& e) {
+        std::cerr << "Error reading from actions.json: " << e.what() << std::endl;
         return;
     }
-
-    // Step 3: Apply actions to the eNB nodes based on the action vector
-    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
-    }
-
-    this->apply_network_conf();
 
     // Signal DRL agent that NS-3 is ready for the next cycle
     sem_post(this->ns3_ready);
@@ -381,7 +389,6 @@ void NetworkScenario::periodically_interact_with_agent()
     // Reschedule the next interaction after this->interaction_interval (default 100 ms)
     Simulator::Schedule(MilliSeconds(this->it_period), &NetworkScenario::periodically_interact_with_agent, this);
 }
-
 
 
 void NetworkScenario::enable_trace()
