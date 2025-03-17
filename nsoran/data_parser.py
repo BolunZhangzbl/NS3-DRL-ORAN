@@ -71,7 +71,7 @@ class DataParser:
         print(f"DataFrame after filtering by time: {df.head()}")  # Debug: After filtering by time
 
         # Update last_read_time for 'prb'
-        if self.time_step%3==0 and self.time_step>0:
+        if self.time_step%30000==0 and self.time_step>0:
             latest_time = df['time'].max()
             self.last_read_time = latest_time
 
