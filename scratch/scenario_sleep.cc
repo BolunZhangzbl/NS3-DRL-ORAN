@@ -19,8 +19,11 @@
 #include<string.h>
 #include<iostream>
 #include<semaphore.h>
+#include <nlohmann/json.hpp>  // Include the nlohmann json library
 
 using namespace ns3;
+using json = nlohmann::json;
+
 NS_LOG_COMPONENT_DEFINE("NetworkScenario");
 
 class NetworkScenario
@@ -299,22 +302,18 @@ void NetworkScenario::dump_initial_state()
 //    }
 //}
 
+
 void NetworkScenario::periodically_interact_with_agent()
 {
+    // Step 1: Check if we are in the first cycle (timestep < 100ms)
     if (this->timestep() >= 100) {
-        sem_wait(this->drl_ready);
+        sem_wait(this->drl_ready);  // Wait for DRL agent to be ready
     }
 
-    int fd1 = open("fifo1", O_WRONLY);
-    int fd2 = open("fifo2", O_RDONLY);
+    // Create a JSON object to hold Tx power
+    json tx_power_json;
 
-    if (fd1 == -1 || fd2 == -1) {
-        std::cerr << "Error: Could not open FIFOs" << std::endl;
-        return;
-    }
-
-    // Prepare state info (Tx power) as usual
-    std::cout << "Starting to send\n";
+    // Prepare state info (Tx power)
     std::stringstream ss;
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
         ss << this->enb_power[i] << ",";
@@ -322,85 +321,65 @@ void NetworkScenario::periodically_interact_with_agent()
     std::string tx_power_str = ss.str();
     std::cout << "Current Tx Power: " << tx_power_str << std::endl;
 
-    // Write the Tx power to fifo1
-    if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
-        std::cerr << "Error: Failed to write to fifo1" << std::endl;
-        close(fd1);
-        close(fd2);
+    // Save the Tx power as a JSON array
+    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+        tx_power_json.push_back(this->enb_power[i]);  // Add each power value to the JSON array
+    }
+
+    // Write Tx power to JSON file
+    std::ofstream tx_file("tx_power.json");
+    if (tx_file.is_open()) {
+        tx_file << tx_power_json.dump();  // Write JSON to file
+        tx_file.close();
+    } else {
+        std::cerr << "Error: Could not open tx_power.json for writing" << std::endl;
         return;
     }
 
     // Signal DRL agent that new state is available
     sem_post(this->ns3_ready);
 
-    /** STEP 3: NS-3 waits for DRL to send new actions **/
+    // Step 2: Wait for DRL to send new actions (Read from JSON file)
     sem_wait(this->drl_ready);
 
-    char rbuf[50];
-    memset(rbuf, 0, sizeof(rbuf));
-
-    std::string received_data;
-
-    // Read new Tx power from FIFO2 (DRL agent response)
-    ssize_t bytesRead = read(fd2, rbuf, sizeof(rbuf) - 1);
-    if (bytesRead > 0) {
-        rbuf[bytesRead] = '\0';  // Null-terminate to avoid garbage characters
-        // Convert to std::string for easy processing
-        received_data = std::string(rbuf);  // Assign value instead of redeclaring
-
-        // Remove trailing newline if it exists
-        if (!received_data.empty() && received_data.back() == '\n') {
-            received_data.pop_back();
-        }
-
-        std::cout << this->timestep() << " ms: Received new Tx Power: " << received_data << std::endl;
-    } else {
-        std::cerr << "Error: No data received from DRL agent" << std::endl;
-        close(fd1);
-        close(fd2);
-        return; // No valid data, exit early
+    // Read action from JSON file
+    std::ifstream action_file("actions.json");
+    if (!action_file.is_open()) {
+        std::cerr << "Error: Could not open actions.json for reading" << std::endl;
+        return;
     }
 
-    // Parse received action vector (binary values)
-    std::vector<int> action_vector;
-    std::stringstream action_stream(received_data);
-    std::string token;
+    json action_json;
+    action_file >> action_json;  // Read JSON data into the action_json object
 
-    while (std::getline(action_stream, token, ',')) {
-        try {
-            int action = std::stoi(token);
-            if (action != 0 && action != 1) {
-                std::cerr << "Error: Invalid action value (must be 0 or 1): " << token << std::endl;
-                continue;
-            }
-            action_vector.push_back(action);
-        } catch (std::exception &e) {
-            std::cerr << "Error parsing action value: " << token << std::endl;
+    // Parse the action vector
+    std::vector<int> action_vector;
+    for (auto& action : action_json) {
+        int action_value = action.get<int>();
+        if (action_value != 0 && action_value != 1) {
+            std::cerr << "Error: Invalid action value (must be 0 or 1): " << action_value << std::endl;
+            continue;
         }
+        action_vector.push_back(action_value);
     }
 
     if (action_vector.size() != this->enb_nodes.GetN()) {
         std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
-        close(fd1);
-        close(fd2);
         return;
     }
 
-    /** STEP 4: Apply actions: Set power to zero for eNBs in sleep mode (0), else set to 44 **/
+    // Step 3: Apply actions to the eNB nodes based on the action vector
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
         this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
     }
 
     this->apply_network_conf();
 
-    close(fd1);
-    close(fd2);
-
     // Signal DRL agent that NS-3 is ready for the next cycle
     sem_post(this->ns3_ready);
 
-    // Reschedule again after this->interaction_interval (default 100 ms)
-    Simulator::Schedule(MilliSeconds(this->it_period),&NetworkScenario::periodically_interact_with_agent, this);
+    // Reschedule the next interaction after this->interaction_interval (default 100 ms)
+    Simulator::Schedule(MilliSeconds(this->it_period), &NetworkScenario::periodically_interact_with_agent, this);
 }
 
 

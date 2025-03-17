@@ -2,6 +2,7 @@
 import os
 import gym
 import time
+import json
 import logging
 import posix_ipc
 
@@ -29,12 +30,9 @@ class ORANSimEnv(gym.Env):
         self.reward_weights = [0.4, 0.4, 0.1, -0.1]
         self.reward_threshold = int(1e6)
 
-        # FIFO setup
-        self.fifo1_path = "/home/bolun/ns-3-dev/fifo1"
-        self.fifo2_path = "/home/bolun/ns-3-dev/fifo2"
-
-        self.fifo1 = os.open("/home/bolun/ns-3-dev/fifo1", os.O_RDONLY | os.O_NONBLOCK)
-        self.fifo2 = os.open("/home/bolun/ns-3-dev/fifo2", os.O_WRONLY | os.O_NONBLOCK)
+        # JSON file paths for communication
+        self.tx_power_file = "/home/bolun/ns-3-dev/tx_power.json"  # File where NS-3 writes Tx power
+        self.actions_file = "/home/bolun/ns-3-dev/actions.json"  # File where DRL writes actions
 
         # Semaphore connections
         try:
@@ -44,7 +42,7 @@ class ORANSimEnv(gym.Env):
             logging.error("Semaphore not found. Ensure NS-3 has initialized them in /dev/shm/")
             raise e
 
-        print("Opening FIFOs and Semaphores for communication...")
+        print("Initializing environment with JSON-based communication...")
 
     def step(self, action):
         assert len(action) == self.num_enb
@@ -91,31 +89,25 @@ class ORANSimEnv(gym.Env):
 
         return True if reward >= self.reward_threshold else False
 
-    def _read_fifo(self):
-        """Read from FIFO safely, returning default values on error."""
+    def _read_tx_power_json(self):
+        """Read Tx power data from JSON file."""
         try:
-            data = os.read(self.fifo1, 1024).decode("utf-8", errors="ignore").strip()
-
-            if not data:
-                raise ValueError("Empty FIFO data")
-
-            power_values = [int(x) for x in data.split(",") if x.strip().isdigit()]
-
-            return power_values if power_values else [self.active_power] * self.num_enb
-
-        except (OSError, ValueError, FileNotFoundError) as e:
-            print(f"Warning: Error reading {self.fifo1}: {e}, using default values.")
-
-        # Return default values if there was an error
+            with open(self.tx_power_file, 'r') as f:
+                tx_power_data = json.load(f)
+                # Make sure to return the power values
+                return tx_power_data if isinstance(tx_power_data, list) else [self.active_power] * self.num_enb
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Warning: Error reading {self.tx_power_file}: {e}, using default values.")
         return [self.active_power] * self.num_enb
 
     def _send_action(self, action):
-        enbs_active_status = np.array(action)
-        txp = ','.join(enbs_active_status.astype(str)) + '\n'  # Add newline for proper termination
-        print(f"Action taken: {txp}")
+        """Write the action to the JSON file."""
+        action_data = {'actions': action.tolist()}  # Converting the action to a list for JSON storage
 
         try:
-            os.write(self.fifo2, txp.encode('utf-8'))  # Send to FIFO2
+            with open(self.actions_file, 'w') as f:
+                json.dump(action_data, f)  # Write the action data to the file
+                print(f"Action taken: {action_data}")
         except OSError as e:
-            print(f"Error writing to FIFO2: {e}")
+            print(f"Error writing to {self.actions_file}: {e}")
 
