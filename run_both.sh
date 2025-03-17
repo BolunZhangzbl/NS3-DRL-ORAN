@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Environment and script configuration
-script="train_dqn.py"
+script="run_both.py"
 
 # Default values (as per the parser default)
 use_cuda=true  # Whether to use CUDA for GPU acceleration
