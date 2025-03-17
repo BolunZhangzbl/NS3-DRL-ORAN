@@ -56,19 +56,19 @@ class DataParser:
                              skiprows=1, index_col=False, usecols=usecols)
             self.time_step += 1
             print(f"Successfully read the file {filename}")
-            print(f"Initial DataFrame (Step {self.time_step}):\n{df.head()}")  # Debug: Check DataFrame after read
+            # print(f"Initial DataFrame (Step {self.time_step}):\n{df.head()}")  # Debug: Check DataFrame after read
         except Exception as e:
             print(f"Error reading the file {filename}: {e}")
             return pd.DataFrame(), None
 
         # Parse time col - Ensure conversion is working
         df = self.convert_time_to_ms(df)
-        print(f"DataFrame after time conversion: {df.head()}")  # Debug: After time conversion
+        # print(f"DataFrame after time conversion: {df.head()}")  # Debug: After time conversion
 
         # Only keep rows after last_read_time
         if self.last_read_time:
             df = df[df['time'] > self.last_read_time]
-        print(f"DataFrame after filtering by time: {df.head()}")  # Debug: After filtering by time
+        # print(f"DataFrame after filtering by time: {df.head()}")  # Debug: After filtering by time
 
         # Update last_read_time for 'prb'
         if self.time_step%30000==0 and self.time_step>0:
@@ -82,7 +82,7 @@ class DataParser:
 
         # Drop 'time' column
         df = df.drop(columns=['time'], errors='ignore')
-        print(f"DataFrame after dropping 'time' column: {df.head()}")  # Debug: After dropping time column
+        # print(f"DataFrame after dropping 'time' column: {df.head()}")  # Debug: After dropping time column
 
         # Process different kpm types
         if kpm_type == 'tp':
@@ -95,7 +95,7 @@ class DataParser:
             df = df.groupby('cellId', as_index=False).sum()
             df = df.rename(columns={'sizeTb1': 'prb'})
 
-        print(f"Final DataFrame for {kpm_type}: {df.head()}")  # Debug: Final DataFrame after processing
+        # print(f"Final DataFrame for {kpm_type}: {df.head()}")  # Debug: Final DataFrame after processing
 
         return df
 
@@ -104,10 +104,10 @@ class DataParser:
         df_sinr = self.read_kpms(kpm_type='sinr')
         df_prb = self.read_kpms(kpm_type='prb')
         
-        print(f"self.last_read_time: {self.last_read_time}")
-        print("df_tp columns:", df_tp.columns)
-        print("df_sinr columns:", df_sinr.columns)
-        print("df_prb columns:", df_prb.columns)
+        # print(f"self.last_read_time: {self.last_read_time}")
+        # print("df_tp columns:", df_tp.columns)
+        # print("df_sinr columns:", df_sinr.columns)
+        # print("df_prb columns:", df_prb.columns)
 
         df_aggregated = df_tp.merge(df_sinr, on='cellId', how='outer').merge(df_prb, on='cellId', how='outer')
         df_aggregated = self.fill_missing_cellid(df_aggregated)
