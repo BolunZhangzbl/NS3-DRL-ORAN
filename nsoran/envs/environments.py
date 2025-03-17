@@ -34,7 +34,7 @@ class ORANSimEnv(gym.Env):
         self.fifo2_path = "/home/bolun/ns-3-dev/fifo2"
 
         self.fifo1 = os.open("/home/bolun/ns-3-dev/fifo1", os.O_RDONLY | os.O_NONBLOCK)
-        self.fifo2 = os.open("/home/bolun/ns-3-dev/fifo2", os.O_WRONLY)
+        self.fifo2 = os.open("/home/bolun/ns-3-dev/fifo2", os.O_WRONLY | os.O_NONBLOCK)
 
         # Semaphore connections
         try:
