@@ -301,34 +301,9 @@ void NetworkScenario::dump_initial_state()
 
 void NetworkScenario::periodically_interact_with_agent()
 {
-    // Step 1: If this is the first cycle (i.e., initial 100ms), don't wait for DRL.
-    if (this->timestep() < 100) {
-        // Log the first cycle
-        std::cout << "Running the first cycle (initial 100ms) without waiting for DRL..." << std::endl;
-
-        // Prepare state info (Tx power) as usual
-        std::stringstream ss;
-        for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-            ss << this->enb_power[i] << ",";
-        }
-        std::string tx_power_str = ss.str();
-        std::cout << "Current Tx Power: " << tx_power_str << std::endl;
-
-        // Write to FIFO
-        int fd1 = open("fifo1", O_WRONLY);
-        int fd2 = open("fifo2", O_RDONLY);
-        if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
-            std::cerr << "Error: Failed to write to fifo1" << std::endl;
-            close(fd1);
-        }
-        close(fd1);
-
-        // Signal DRL agent that new state is available
-        sem_post(this->ns3_ready);
+    if (this->timestep() >= 100) {
+        sem_wait(this->drl_ready);
     }
-
-    /** STEP 2: NS-3 waits for DRL agent to be ready (after the first 100ms) **/
-    sem_wait(this->drl_ready);
 
     int fd1 = open("fifo1", O_WRONLY);
     int fd2 = open("fifo2", O_RDONLY);

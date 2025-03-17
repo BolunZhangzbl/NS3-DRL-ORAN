@@ -287,7 +287,7 @@ void NetworkScenario::periodically_interact_with_agent()
         len++;
         if(buf[i]==',')
             comma--;
-        if(comma==0)F
+        if(comma==0):
             break;
 
     }
