@@ -316,12 +316,15 @@ void NetworkScenario::periodically_interact_with_agent()
 
         // Write to FIFO
         int fd1 = open("fifo1", O_WRONLY);
+        int fd2 = open("fifo2", O_RDONLY);
         if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
             std::cerr << "Error: Failed to write to fifo1" << std::endl;
             close(fd1);
         }
         close(fd1);
 
+        // Signal DRL agent that new state is available
+        sem_post(this->ns3_ready);
     }
 
     /** STEP 2: NS-3 waits for DRL agent to be ready (after the first 100ms) **/

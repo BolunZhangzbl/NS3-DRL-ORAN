@@ -39,7 +39,7 @@ class MPERunner(Runner):
             os.unlink("/home/waleed/holistic/fifo2")
 
         os.mkfifo("/home/waleed/holistic/fifo2")
-        self.fifo=os.open("/home/waleed/holistic/fifo1",os.O_RDONLY) #it frezez here runs after runing sim2
+        self.fifo=os.open("/home/waleed/holistic/fifo1", os.O_RDONLY) #it frezez here runs after runing sim2
         self.fifo2=os.open("/home/waleed/holistic/fifo2", os.O_WRONLY)
         last=[]
         print("Opening FIFOs to send/recive...") # run sim2 in ns 3 holistic dir -----------------------
@@ -255,4 +255,3 @@ class MPERunner(Runner):
         print("eval average episode rewards of agent: " + str(eval_average_episode_rewards))
         self.log_env(eval_env_infos, total_num_steps)
 
-   
