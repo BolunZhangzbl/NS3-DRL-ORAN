@@ -1,3 +1,6 @@
+#include "ns3/core-module.h"
+#include "ns3/lte-module.h"
+#include "ns3/mobility-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/internet-apps-module.h"
 #include "ns3/applications-module.h"
@@ -9,13 +12,7 @@
 #include <cmath>
 #include <random>
 #include <tuple>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include<string.h>
-#include<iostream>
-#include<semaphore.h>
+#include <vector>
 
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE("NetworkScenario");
@@ -42,9 +39,6 @@ class NetworkScenario
         int it_period;
         int sim_time;
         int active_power;
-
-        sem_t *ns3_ready;
-        sem_t *drl_ready;
 
         Ptr<FlowMonitor> Monitor;
         FlowMonitorHelper flowmon;
@@ -76,7 +70,7 @@ class NetworkScenario
         void dump_initial_state();
         void periodically_interact_with_agent();
 
-        int timestep() { return Simulator::Now().GetMilliSeconds();  }
+         int timestep() { return Simulator::Now().GetMilliSeconds();  }
 
 };
 
@@ -98,15 +92,6 @@ void NetworkScenario::initialize(
         this->sim_time = sim_time;
         this->active_power = active_power;
 
-        // Initialize semaphores
-        this->ns3_ready = sem_open("/ns3_ready", O_CREAT, 0644, 0);  // ns3_ready: 0 initially
-        this->drl_ready = sem_open("/drl_ready", O_CREAT, 0644, 0);  // drl_ready: 0 initially
-
-        if (this->ns3_ready == SEM_FAILED || this->drl_ready == SEM_FAILED) {
-            std::cerr << "Error: Could not open semaphores." << std::endl;
-            exit(1);
-        }
-
         this->create_enb_nodes();
         this->create_ue_nodes();
 
@@ -118,10 +103,6 @@ void NetworkScenario::initialize(
 }
 
 void NetworkScenario::run(){
-
-    mkfifo("fifo1", 0666);
-    mkfifo("fifo2", 0666);
-
     this->dump_initial_state();
     this->periodically_interact_with_agent();
     AnimationInterface anim ("wireless-animation.xml"); // Mandatory
@@ -471,53 +452,6 @@ void NetworkScenario::create_ue_applications()
         sink_apps.Start(Seconds(0));
     }
 }
-
- void NetworkScenario::printStats(FlowMonitorHelper &flowmon_helper, bool perFlowInfo)
-{
-    Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmon_helper.GetClassifier());
-    std::string proto;
-    Ptr<FlowMonitor> monitor = flowmon_helper.GetMonitor ();
-    std::map < FlowId, FlowMonitor::FlowStats > stats = monitor->GetFlowStats();
-    double totalTimeReceiving;
-    uint64_t totalPacketsReceived, totalPacketsDropped, totalBytesReceived;
-
-    totalBytesReceived = 0, totalPacketsDropped = 0, totalPacketsReceived = 0, totalTimeReceiving = 0;
-    for (std::map< FlowId, FlowMonitor::FlowStats>::iterator flow = stats.begin(); flow != stats.end(); flow++)
-    {
-      Ipv4FlowClassifier::FiveTuple  t = classifier->FindFlow(flow->first);
-      switch(t.protocol)
-       {
-       case(6):
-           proto = "TCP";
-           break;
-       case(17):
-           proto = "UDP";
-           break;
-       default:
-           exit(1);
-       }
-       totalBytesReceived += (double) flow->second.rxBytes * 8;
-       totalTimeReceiving += flow->second.timeLastRxPacket.GetSeconds ();
-       totalPacketsReceived += flow->second.rxPackets;
-       totalPacketsDropped += flow->second.txPackets - flow->second.rxPackets;
-       if (perFlowInfo) {
-         std::cout << "FlowID: " << flow->first << " (" << proto << " "
-                   << t.sourceAddress << " / " << t.sourcePort << " --> "
-                   << t.destinationAddress << " / " << t.destinationPort << ")" << std::endl;
-         std::cout << "  Tx Bytes: " << flow->second.txBytes << std::endl;
-         std::cout << "  Rx Bytes: " << flow->second.rxBytes << std::endl;
-         std::cout << "  Tx Packets: " << flow->second.txPackets << std::endl;
-         std::cout << "  Rx Packets: " << flow->second.rxPackets << std::endl;
-         std::cout << "  Time LastRxPacket: " << flow->second.timeLastRxPacket.GetSeconds () << "s" << std::endl;
-         std::cout << "  Lost Packets: " << flow->second.lostPackets << std::endl;
-         std::cout << "  Pkt Lost Ratio: " << ((double)flow->second.txPackets-(double)flow->second.rxPackets)/(double)flow->second.txPackets << std::endl;
-         std::cout << "  Throughput: " << ( ((double)flow->second.rxBytes*8) / (flow->second.timeLastRxPacket.GetSeconds ()) ) << "bps" << std::endl;
-         std::cout << "  Mean{Delay}: " << (flow->second.delaySum.GetSeconds()/flow->second.rxPackets) << std::endl;
-         std::cout << "  Mean{Jitter}: " << (flow->second.jitterSum.GetSeconds()/(flow->second.rxPackets)) << std::endl;
-       }
-     }
-}
-
 
 
 // GlobalValue declarations
