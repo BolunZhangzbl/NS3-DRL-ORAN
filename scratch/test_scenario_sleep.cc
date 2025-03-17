@@ -6,11 +6,13 @@
 #include "ns3/applications-module.h"
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-helper.h"
+#include "ns3/netanim-module.h"
+#include "ns3/flow-monitor-module.h"
+#include "ns3/flow-monitor-helper.h"
 #include <cmath>
 #include <random>
 #include <tuple>
 #include <vector>
-#include "ns3/netanim-module.h"
 
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE("NetworkScenario");
@@ -38,6 +40,9 @@ class NetworkScenario
         int sim_time;
         int active_power;
 
+        Ptr<FlowMonitor> Monitor;
+        FlowMonitorHelper flowmon;
+
         void ue_depart_callback();
         void ue_arrive_callback();
 
@@ -60,6 +65,7 @@ class NetworkScenario
         void callback_ue_spotted_at_enb(std::string context, const uint64_t imsi, const uint16_t cell_id, const uint16_t rnti);
         void callback_measurement_report_received(const uint64_t imsi, const uint16_t cell_id,  const uint16_t rnti, const LteRrcSap::MeasurementReport report);
         void setup_callbacks();
+        void printStats(FlowMonitorHelper &flowmonHelper, bool perFlowInfo);
 
         void dump_initial_state();
         void periodically_interact_with_agent();
@@ -101,8 +107,13 @@ void NetworkScenario::run(){
     this->periodically_interact_with_agent();
     AnimationInterface anim ("wireless-animation.xml"); // Mandatory
 
+    this->Monitor = this->flowmon.Install(this->ue_nodes);
+    this->Monitor = this->flowmon.Install(this->server_nodes);
+
     Simulator::Stop(Seconds(this->sim_time));
     Simulator::Run();
+
+    this->printStats(this->flowmon,true);
     Simulator::Destroy();
 }
 
@@ -267,31 +278,31 @@ void NetworkScenario::periodically_interact_with_agent()
     // Only ask for new cell parameters from the agent if the warmup phase is
     // over (in which case this->timestep() will return a non-negative number)
     if (this->timestep() >= 0) {
-//    // Read in the new transmission power levels for all eNBs
-//    std::cout << this->timestep() << " ms: Agent action?" << std::endl;
-//    std::cout << this->timestep() << " Enter New Value of Tx Power (0 or 1):" << std::endl;
-//
-//    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-//        int power;
-//        if (!(std::cin >> power)) {
-//            // Clear the error flag and ignore invalid input
-//            std::cin.clear();
-//            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-//            std::cerr << "Error: Invalid input. Please enter 0 or 1." << std::endl;
-//            i--; // Retry for the same eNB
-//            continue;
-//        }
-//
-//        // Validate input (must be 0 or 1)
-//        if (power != 0 && power != 1) {
-//            std::cerr << "Error: Input must be 0 or 1. Please try again." << std::endl;
-//            i--; // Retry for the same eNB
-//            continue;
-//        }
-//
-//        // Set eNB power based on input
-//        this->enb_power[i] = (power == 0) ? 0 : this->active_power;
-//    }
+    // Read in the new transmission power levels for all eNBs
+    std::cout << this->timestep() << " ms: Agent action?" << std::endl;
+    std::cout << this->timestep() << " Enter New Value of Tx Power (0 or 1):" << std::endl;
+
+    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+        int power;
+        if (!(std::cin >> power)) {
+            // Clear the error flag and ignore invalid input
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cerr << "Error: Invalid input. Please enter 0 or 1." << std::endl;
+            i--; // Retry for the same eNB
+            continue;
+        }
+
+        // Validate input (must be 0 or 1)
+        if (power != 0 && power != 1) {
+            std::cerr << "Error: Input must be 0 or 1. Please try again." << std::endl;
+            i--; // Retry for the same eNB
+            continue;
+        }
+
+        // Set eNB power based on input
+        this->enb_power[i] = (power == 0) ? 0 : this->active_power;
+    }
 
     // Call the subclass-specific configuration update method
     this->apply_network_conf();
@@ -441,6 +452,53 @@ void NetworkScenario::create_ue_applications()
         sink_apps.Start(Seconds(0));
     }
 }
+
+ void NetworkScenario::printStats(FlowMonitorHelper &flowmon_helper, bool perFlowInfo)
+{
+    Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmon_helper.GetClassifier());
+    std::string proto;
+    Ptr<FlowMonitor> monitor = flowmon_helper.GetMonitor ();
+    std::map < FlowId, FlowMonitor::FlowStats > stats = monitor->GetFlowStats();
+    double totalTimeReceiving;
+    uint64_t totalPacketsReceived, totalPacketsDropped, totalBytesReceived;
+
+    totalBytesReceived = 0, totalPacketsDropped = 0, totalPacketsReceived = 0, totalTimeReceiving = 0;
+    for (std::map< FlowId, FlowMonitor::FlowStats>::iterator flow = stats.begin(); flow != stats.end(); flow++)
+    {
+      Ipv4FlowClassifier::FiveTuple  t = classifier->FindFlow(flow->first);
+      switch(t.protocol)
+       {
+       case(6):
+           proto = "TCP";
+           break;
+       case(17):
+           proto = "UDP";
+           break;
+       default:
+           exit(1);
+       }
+       totalBytesReceived += (double) flow->second.rxBytes * 8;
+       totalTimeReceiving += flow->second.timeLastRxPacket.GetSeconds ();
+       totalPacketsReceived += flow->second.rxPackets;
+       totalPacketsDropped += flow->second.txPackets - flow->second.rxPackets;
+       if (perFlowInfo) {
+         std::cout << "FlowID: " << flow->first << " (" << proto << " "
+                   << t.sourceAddress << " / " << t.sourcePort << " --> "
+                   << t.destinationAddress << " / " << t.destinationPort << ")" << std::endl;
+         std::cout << "  Tx Bytes: " << flow->second.txBytes << std::endl;
+         std::cout << "  Rx Bytes: " << flow->second.rxBytes << std::endl;
+         std::cout << "  Tx Packets: " << flow->second.txPackets << std::endl;
+         std::cout << "  Rx Packets: " << flow->second.rxPackets << std::endl;
+         std::cout << "  Time LastRxPacket: " << flow->second.timeLastRxPacket.GetSeconds () << "s" << std::endl;
+         std::cout << "  Lost Packets: " << flow->second.lostPackets << std::endl;
+         std::cout << "  Pkt Lost Ratio: " << ((double)flow->second.txPackets-(double)flow->second.rxPackets)/(double)flow->second.txPackets << std::endl;
+         std::cout << "  Throughput: " << ( ((double)flow->second.rxBytes*8) / (flow->second.timeLastRxPacket.GetSeconds ()) ) << "bps" << std::endl;
+         std::cout << "  Mean{Delay}: " << (flow->second.delaySum.GetSeconds()/flow->second.rxPackets) << std::endl;
+         std::cout << "  Mean{Jitter}: " << (flow->second.jitterSum.GetSeconds()/(flow->second.rxPackets)) << std::endl;
+       }
+     }
+}
+
 
 
 // GlobalValue declarations
