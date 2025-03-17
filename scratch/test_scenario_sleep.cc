@@ -277,62 +277,71 @@ void NetworkScenario::dump_initial_state()
     std::cout << this->timestep() << " ms: Seed " << std::endl;
 }
 
-
 void NetworkScenario::periodically_interact_with_agent()
 {
-    // Dump relevant simulation state for each UE to stdout. Currently we are
-    // interested in 2D position and IPv4 bytes received since last time
-    for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
-        Ptr<Node> node = this->ue_nodes.Get(i);
-        Vector position = node->GetObject<MobilityModel>()->GetPosition();
-        std::cout << this->timestep() << " ms: UE state: "
-            << "IMSI " << (i + 1)
-            << " at " << position.x << " " << position.y<< std::endl;
+    if (this->timestep() < 100) {
+        this->apply_network_conf();
+        std::cout << "Time Step: " << this->timestep() << std::endl;
     }
-
-    // Dump the current cell parameter configuration to stdout
-    std::cout << this->timestep() << " ms: Configuration: Cell";
-    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        std::cout << " tx" << (i + 1) << " " << this->enb_power[i];
-    }
-    std::cout << std::endl;
-
-    // Only ask for new cell parameters from the agent if the warmup phase is
-    // over (in which case this->timestep() will return a non-negative number)
-    if (this->timestep() >= 0) {
-    // Read in the new transmission power levels for all eNBs
-    std::cout << this->timestep() << " ms: Agent action?" << std::endl;
-    std::cout << this->timestep() << " Enter New Value of Tx Power (0 or 1):" << std::endl;
-
-    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        int power;
-        if (!(std::cin >> power)) {
-            // Clear the error flag and ignore invalid input
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cerr << "Error: Invalid input. Please enter 0 or 1." << std::endl;
-            i--; // Retry for the same eNB
-            continue;
-        }
-
-        // Validate input (must be 0 or 1)
-        if (power != 0 && power != 1) {
-            std::cerr << "Error: Input must be 0 or 1. Please try again." << std::endl;
-            i--; // Retry for the same eNB
-            continue;
-        }
-
-        // Set eNB power based on input
-        this->enb_power[i] = (power == 0) ? 0 : this->active_power;
-    }
-
-    // Call the subclass-specific configuration update method
-    this->apply_network_conf();
-}
-
-    // Reschedule again after this->interaction_interval (default 100 ms)
     Simulator::Schedule(MilliSeconds(1000),&NetworkScenario::periodically_interact_with_agent, this);
 }
+
+
+//void NetworkScenario::periodically_interact_with_agent()
+//{
+//    // Dump relevant simulation state for each UE to stdout. Currently we are
+//    // interested in 2D position and IPv4 bytes received since last time
+//    for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
+//        Ptr<Node> node = this->ue_nodes.Get(i);
+//        Vector position = node->GetObject<MobilityModel>()->GetPosition();
+//        std::cout << this->timestep() << " ms: UE state: "
+//            << "IMSI " << (i + 1)
+//            << " at " << position.x << " " << position.y<< std::endl;
+//    }
+//
+//    // Dump the current cell parameter configuration to stdout
+//    std::cout << this->timestep() << " ms: Configuration: Cell";
+//    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+//        std::cout << " tx" << (i + 1) << " " << this->enb_power[i];
+//    }
+//    std::cout << std::endl;
+//
+//    // Only ask for new cell parameters from the agent if the warmup phase is
+//    // over (in which case this->timestep() will return a non-negative number)
+//    if (this->timestep() >= 0) {
+//    // Read in the new transmission power levels for all eNBs
+//    std::cout << this->timestep() << " ms: Agent action?" << std::endl;
+//    std::cout << this->timestep() << " Enter New Value of Tx Power (0 or 1):" << std::endl;
+//
+//    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+//        int power;
+//        if (!(std::cin >> power)) {
+//            // Clear the error flag and ignore invalid input
+//            std::cin.clear();
+//            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+//            std::cerr << "Error: Invalid input. Please enter 0 or 1." << std::endl;
+//            i--; // Retry for the same eNB
+//            continue;
+//        }
+//
+//        // Validate input (must be 0 or 1)
+//        if (power != 0 && power != 1) {
+//            std::cerr << "Error: Input must be 0 or 1. Please try again." << std::endl;
+//            i--; // Retry for the same eNB
+//            continue;
+//        }
+//
+//        // Set eNB power based on input
+//        this->enb_power[i] = (power == 0) ? 0 : this->active_power;
+//    }
+//
+//    // Call the subclass-specific configuration update method
+//    this->apply_network_conf();
+//}
+//
+//    // Reschedule again after this->interaction_interval (default 100 ms)
+//    Simulator::Schedule(MilliSeconds(1000),&NetworkScenario::periodically_interact_with_agent, this);
+//}
 
 
 void NetworkScenario::enable_trace()

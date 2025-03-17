@@ -300,7 +300,6 @@ void NetworkScenario::periodically_interact_with_agent()
         if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
             std::cerr << "Error: Failed to write to fifo1" << std::endl;
             close(fd1);
-            return;
         }
         close(fd1);
 
