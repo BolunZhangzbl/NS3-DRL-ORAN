@@ -1,6 +1,3 @@
-#include "ns3/core-module.h"
-#include "ns3/lte-module.h"
-#include "ns3/mobility-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/internet-apps-module.h"
 #include "ns3/applications-module.h"
@@ -12,7 +9,13 @@
 #include <cmath>
 #include <random>
 #include <tuple>
-#include <vector>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include<string.h>
+#include<iostream>
+#include<semaphore.h>
 
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE("NetworkScenario");
@@ -39,6 +42,9 @@ class NetworkScenario
         int it_period;
         int sim_time;
         int active_power;
+
+        sem_t *ns3_ready;
+        sem_t *drl_ready;
 
         Ptr<FlowMonitor> Monitor;
         FlowMonitorHelper flowmon;
@@ -70,7 +76,7 @@ class NetworkScenario
         void dump_initial_state();
         void periodically_interact_with_agent();
 
-         int timestep() { return Simulator::Now().GetMilliSeconds();  }
+        int timestep() { return Simulator::Now().GetMilliSeconds();  }
 
 };
 
@@ -92,6 +98,15 @@ void NetworkScenario::initialize(
         this->sim_time = sim_time;
         this->active_power = active_power;
 
+        // Initialize semaphores
+        this->ns3_ready = sem_open("/ns3_ready", O_CREAT, 0644, 0);  // ns3_ready: 0 initially
+        this->drl_ready = sem_open("/drl_ready", O_CREAT, 0644, 0);  // drl_ready: 0 initially
+
+        if (this->ns3_ready == SEM_FAILED || this->drl_ready == SEM_FAILED) {
+            std::cerr << "Error: Could not open semaphores." << std::endl;
+            exit(1);
+        }
+
         this->create_enb_nodes();
         this->create_ue_nodes();
 
@@ -103,6 +118,10 @@ void NetworkScenario::initialize(
 }
 
 void NetworkScenario::run(){
+
+    mkfifo("fifo1", 0666);
+    mkfifo("fifo2", 0666);
+
     this->dump_initial_state();
     this->periodically_interact_with_agent();
     AnimationInterface anim ("wireless-animation.xml"); // Mandatory

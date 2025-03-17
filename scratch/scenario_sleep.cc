@@ -233,12 +233,12 @@ void NetworkScenario::callback_measurement_report_received(
 {
     // An eNodeB has received a measurement report of neighboring cell signal
     // strengths from an attached UE. Dump interesting information to stdout
-    // std::cout << this->timestep() << " ms: Measurement report: "
-    //     << "Cell " << (int)cell_id
-    //     << " got report from IMSI " << imsi
-    //     << ": " << (int)cell_id
-    //     << "/" << (int)report.measResults.rsrpResult
-    //     << "/" << (int)report.measResults.rsrqResult;
+     std::cout << this->timestep() << " ms: Measurement report: "
+         << "Cell " << (int)cell_id
+         << " got report from IMSI " << imsi
+         << ": " << (int)cell_id
+         << "/" << (int)report.measResults.rsrpResult
+         << "/" << (int)report.measResults.rsrqResult;
 
     // There might be additional measurements to the one listed directly in the
     // data structure, hence we need to do some additional iteration
