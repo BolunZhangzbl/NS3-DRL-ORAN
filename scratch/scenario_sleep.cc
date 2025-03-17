@@ -51,7 +51,7 @@ class NetworkScenario
 
         Ptr<FlowMonitor> Monitor;
         FlowMonitorHelper flowmon;
-        ns3::Time last_ue_arrival;
+
         void ue_depart_callback();
         void ue_arrive_callback();
 
