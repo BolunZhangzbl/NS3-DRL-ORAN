@@ -80,7 +80,7 @@ class NetworkScenario
         void dump_initial_state();
         void periodically_interact_with_agent();
 
-         int timestep() { return Simulator::Now().GetMilliSeconds();  }
+        int timestep() { return Simulator::Now().GetMilliSeconds();  }
 
 };
 
@@ -284,7 +284,7 @@ void NetworkScenario::periodically_interact_with_agent()
 {
     // Step 1: If this is the first cycle (i.e., initial 100ms), don't wait for DRL.
     if (this->timestep() < 100) {
-        // In the first 100ms, proceed normally without waiting for the DRL agent
+        // Log the first cycle
         std::cout << "Running the first cycle (initial 100ms) without waiting for DRL..." << std::endl;
 
         // Prepare state info (Tx power) as usual
@@ -295,23 +295,35 @@ void NetworkScenario::periodically_interact_with_agent()
         std::string tx_power_str = ss.str();
         std::cout << "Current Tx Power: " << tx_power_str << std::endl;
 
+        // Write to FIFO
         int fd1 = open("fifo1", O_WRONLY);
         if (fd1 == -1) {
             std::cerr << "Error: Could not open fifo1" << std::endl;
             return;
         }
 
-        // Write the Tx power to fifo1
         if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
             std::cerr << "Error: Failed to write to fifo1" << std::endl;
             close(fd1);
             return;
         }
-
         close(fd1);
 
-        // Allow the DRL agent to work in parallel, without waiting for it yet
-        return;  // Just exit the function and wait for the next cycle
+        // 🛠 **New: Write to .txt files explicitly**
+        std::ofstream file("output.txt", std::ios::app);
+        if (file.is_open()) {
+            file << "Current timestep: " << this->timestep() << " ms\n";
+            file << "Tx Power: " << tx_power_str << "\n";
+            file.flush();  // 🛠 Force write to disk
+        } else {
+            std::cerr << "Error: Unable to open output.txt\n";
+        }
+        file.close();
+
+        // 🛠 **New: Call apply_network_conf() to ensure network updates**
+        this->apply_network_conf();  // This may update additional log files
+
+        return;  // Exit for now, next cycle will continue
     }
 
     /** STEP 2: NS-3 waits for DRL agent to be ready (after the first 100ms) **/
