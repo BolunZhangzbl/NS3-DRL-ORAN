@@ -132,9 +132,6 @@ void NetworkScenario::run(){
     this->Monitor = this->flowmon.Install(this->ue_nodes);
     this->Monitor = this->flowmon.Install(this->server_nodes);
 
-    // AnimationInterface anim ("wireless-animation.xml"); // Mandatory
-    // anim.SetMaxPktsPerTraceFile(0xFFFFFFFF);
-
     Simulator::Stop(Seconds(this->sim_time));
     Simulator::Run();
 
@@ -282,131 +279,156 @@ void NetworkScenario::dump_initial_state()
 
 void NetworkScenario::periodically_interact_with_agent()
 {
-    // Step 1: If this is the first cycle (i.e., initial 100ms), don't wait for DRL.
     if (this->timestep() < 100) {
-        // Log the first cycle
-        std::cout << "Running the first cycle (initial 100ms) without waiting for DRL..." << std::endl;
+        std::cout << "Timestep: " << this->timestep() << std::endl;
 
-        // Prepare state info (Tx power) as usual
-        std::stringstream ss;
-        for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-            ss << this->enb_power[i] << ",";
-        }
-        std::string tx_power_str = ss.str();
-        std::cout << "Current Tx Power: " << tx_power_str << std::endl;
+        // Apply network configuration (e.g., update Tx Power)
+        this->apply_network_conf();
 
-        // Write to FIFO
-        int fd1 = open("fifo1", O_WRONLY);
-        if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
-            std::cerr << "Error: Failed to write to fifo1" << std::endl;
-            close(fd1);
-        }
-        close(fd1);
+        // Manually trigger LTE trace updates
+        this->lte_helper->EnableDlPhyTraces();  // Logs DlRxPhyStats.txt
+        this->lte_helper->EnableDlMacTraces();  // Logs DlMacStats.txt
+        this->lte_helper->EnableRlcTraces();    // (Just in case, may not be needed)
 
-        this->apply_network_conf();  // This may update additional log files
-
-    }
-
-    /** STEP 2: NS-3 waits for DRL agent to be ready (after the first 100ms) **/
-    sem_wait(this->drl_ready);
-
-    int fd1 = open("fifo1", O_WRONLY);
-    int fd2 = open("fifo2", O_RDONLY);
-
-    if (fd1 == -1 || fd2 == -1) {
-        std::cerr << "Error: Could not open FIFOs" << std::endl;
-        return;
-    }
-
-    // Prepare state info (Tx power) as usual
-    std::cout << "Starting to send\n";
-    std::stringstream ss;
-    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        ss << this->enb_power[i] << ",";
-    }
-    std::string tx_power_str = ss.str();
-    std::cout << "Current Tx Power: " << tx_power_str << std::endl;
-
-    // Write the Tx power to fifo1
-    if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
-        std::cerr << "Error: Failed to write to fifo1" << std::endl;
-        close(fd1);
-        close(fd2);
-        return;
-    }
-
-    // Signal DRL agent that new state is available
-    sem_post(this->ns3_ready);
-
-    /** STEP 3: NS-3 waits for DRL to send new actions **/
-    sem_wait(this->drl_ready);
-
-    char rbuf[50];
-    memset(rbuf, 0, sizeof(rbuf));
-
-    std::string received_data;
-
-    // Read new Tx power from FIFO2 (DRL agent response)
-    ssize_t bytesRead = read(fd2, rbuf, sizeof(rbuf) - 1);
-    if (bytesRead > 0) {
-        rbuf[bytesRead] = '\0';  // Null-terminate to avoid garbage characters
-        // Convert to std::string for easy processing
-        received_data = std::string(rbuf);  // Assign value instead of redeclaring
-
-        // Remove trailing newline if it exists
-        if (!received_data.empty() && received_data.back() == '\n') {
-            received_data.pop_back();
-        }
-
-        std::cout << this->timestep() << " ms: Received new Tx Power: " << received_data << std::endl;
+        // Continue scheduling the function to ensure updates happen at the next interval
+        Simulator::Schedule(MilliSeconds(this->it_period), &NetworkScenario::periodically_interact_with_agent, this);
     } else {
-        std::cerr << "Error: No data received from DRL agent" << std::endl;
-        close(fd1);
-        close(fd2);
-        return; // No valid data, exit early
+        // After 100ms, stop automatic updates and wait for DRL signal
+        std::cout << "Paused at timestep " << this->timestep()
+                  << ", waiting for DRL signal..." << std::endl;
+
+        sem_wait(this->drl_ready); // Pause execution until DRL agent is ready
+
+        // Resume when DRL agent responds
+        Simulator::Schedule(MilliSeconds(this->it_period), &NetworkScenario::periodically_interact_with_agent, this);
     }
-
-    // Parse received action vector (binary values)
-    std::vector<int> action_vector;
-    std::stringstream action_stream(received_data);
-    std::string token;
-
-    while (std::getline(action_stream, token, ',')) {
-        try {
-            int action = std::stoi(token);
-            if (action != 0 && action != 1) {
-                std::cerr << "Error: Invalid action value (must be 0 or 1): " << token << std::endl;
-                continue;
-            }
-            action_vector.push_back(action);
-        } catch (std::exception &e) {
-            std::cerr << "Error parsing action value: " << token << std::endl;
-        }
-    }
-
-    if (action_vector.size() != this->enb_nodes.GetN()) {
-        std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
-        close(fd1);
-        close(fd2);
-        return;
-    }
-
-    /** STEP 4: Apply actions: Set power to zero for eNBs in sleep mode (0), else set to 44 **/
-    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
-    }
-
-    this->apply_network_conf();
-
-    close(fd1);
-    close(fd2);
-
-    // Signal DRL agent that NS-3 is ready for the next cycle
-    sem_post(this->ns3_ready);
-
-    // Reschedule again after this->interaction_interval (default 100 ms)
-    Simulator::Schedule(MilliSeconds(this->it_period),&NetworkScenario::periodically_interact_with_agent, this);
 }
+
+//void NetworkScenario::periodically_interact_with_agent()
+//{
+//    // Step 1: If this is the first cycle (i.e., initial 100ms), don't wait for DRL.
+//    if (this->timestep() < 100) {
+//        // Log the first cycle
+//        std::cout << "Running the first cycle (initial 100ms) without waiting for DRL..." << std::endl;
+//
+//        // Prepare state info (Tx power) as usual
+//        std::stringstream ss;
+//        for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+//            ss << this->enb_power[i] << ",";
+//        }
+//        std::string tx_power_str = ss.str();
+//        std::cout << "Current Tx Power: " << tx_power_str << std::endl;
+//
+//        // Write to FIFO
+//        int fd1 = open("fifo1", O_WRONLY);
+//        if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
+//            std::cerr << "Error: Failed to write to fifo1" << std::endl;
+//            close(fd1);
+//        }
+//        close(fd1);
+//
+//    }
+//
+//    /** STEP 2: NS-3 waits for DRL agent to be ready (after the first 100ms) **/
+//    sem_wait(this->drl_ready);
+//
+//    int fd1 = open("fifo1", O_WRONLY);
+//    int fd2 = open("fifo2", O_RDONLY);
+//
+//    if (fd1 == -1 || fd2 == -1) {
+//        std::cerr << "Error: Could not open FIFOs" << std::endl;
+//        return;
+//    }
+//
+//    // Prepare state info (Tx power) as usual
+//    std::cout << "Starting to send\n";
+//    std::stringstream ss;
+//    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+//        ss << this->enb_power[i] << ",";
+//    }
+//    std::string tx_power_str = ss.str();
+//    std::cout << "Current Tx Power: " << tx_power_str << std::endl;
+//
+//    // Write the Tx power to fifo1
+//    if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
+//        std::cerr << "Error: Failed to write to fifo1" << std::endl;
+//        close(fd1);
+//        close(fd2);
+//        return;
+//    }
+//
+//    // Signal DRL agent that new state is available
+//    sem_post(this->ns3_ready);
+//
+//    /** STEP 3: NS-3 waits for DRL to send new actions **/
+//    sem_wait(this->drl_ready);
+//
+//    char rbuf[50];
+//    memset(rbuf, 0, sizeof(rbuf));
+//
+//    std::string received_data;
+//
+//    // Read new Tx power from FIFO2 (DRL agent response)
+//    ssize_t bytesRead = read(fd2, rbuf, sizeof(rbuf) - 1);
+//    if (bytesRead > 0) {
+//        rbuf[bytesRead] = '\0';  // Null-terminate to avoid garbage characters
+//        // Convert to std::string for easy processing
+//        received_data = std::string(rbuf);  // Assign value instead of redeclaring
+//
+//        // Remove trailing newline if it exists
+//        if (!received_data.empty() && received_data.back() == '\n') {
+//            received_data.pop_back();
+//        }
+//
+//        std::cout << this->timestep() << " ms: Received new Tx Power: " << received_data << std::endl;
+//    } else {
+//        std::cerr << "Error: No data received from DRL agent" << std::endl;
+//        close(fd1);
+//        close(fd2);
+//        return; // No valid data, exit early
+//    }
+//
+//    // Parse received action vector (binary values)
+//    std::vector<int> action_vector;
+//    std::stringstream action_stream(received_data);
+//    std::string token;
+//
+//    while (std::getline(action_stream, token, ',')) {
+//        try {
+//            int action = std::stoi(token);
+//            if (action != 0 && action != 1) {
+//                std::cerr << "Error: Invalid action value (must be 0 or 1): " << token << std::endl;
+//                continue;
+//            }
+//            action_vector.push_back(action);
+//        } catch (std::exception &e) {
+//            std::cerr << "Error parsing action value: " << token << std::endl;
+//        }
+//    }
+//
+//    if (action_vector.size() != this->enb_nodes.GetN()) {
+//        std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
+//        close(fd1);
+//        close(fd2);
+//        return;
+//    }
+//
+//    /** STEP 4: Apply actions: Set power to zero for eNBs in sleep mode (0), else set to 44 **/
+//    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+//        this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
+//    }
+//
+//    this->apply_network_conf();
+//
+//    close(fd1);
+//    close(fd2);
+//
+//    // Signal DRL agent that NS-3 is ready for the next cycle
+//    sem_post(this->ns3_ready);
+//
+//    // Reschedule again after this->interaction_interval (default 100 ms)
+//    Simulator::Schedule(MilliSeconds(this->it_period),&NetworkScenario::periodically_interact_with_agent, this);
+//}
 
 
 
