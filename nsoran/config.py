@@ -41,8 +41,7 @@ def get_parser():
     # Env parameters
     parser.add_argument('--use_cuda', action='store_false', help="Disable CUDA (default: enabled)")
     parser.add_argument('--use_wandb', action='store_true', help="Enable Weights & Biases logging (default: disabled)")
-    parser.set_defaults(use_cuda=True)
-    parser.set_defaults(use_wandb=False)
+    parser.set_defaults(use_cuda=False, use_wandb=False)
 
     # ORAN parameters
     parser.add_argument('--num_enb', type=int, default=4, help="Number of eNBs")
