@@ -71,7 +71,7 @@ class ORANSimEnv(gym.Env):
         self.latest_time = self.data_parser.last_read_time
 
         # Add Tx power from ORAN scenario
-        data_tx_power = self._read_fifo()
+        data_tx_power = self._read_tx_power_json()
         df_state['tx_power'] = data_tx_power[:len(df_state)]
         df_state = df_state.drop(columns=['cellId'], errors='ignore')
 
