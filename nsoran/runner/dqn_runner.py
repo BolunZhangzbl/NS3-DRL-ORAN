@@ -29,7 +29,9 @@ class DQNRunner:
             )
 
         # Initialize environment and agent
+        print("Creating Env......")
         self.env = ORANSimEnv(args)
+        print("Creating DQN......")
         self.agent = BaseAgentDQN(args)
 
         # Logging variables
