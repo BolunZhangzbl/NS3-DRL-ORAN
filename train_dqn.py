@@ -46,7 +46,7 @@ def monitor_process(ns3_process, drl_thread):
     """
     Monitor both NS-3 and DRL processes, terminate the other process if one crashes
     """
-    while drl_thread.is_active():
+    while drl_thread.is_alive():
         if ns3_process.poll() is not None:   # NS-3 exits unexpectedly
             print("Error: NS-3 exited unexpectedly. Terminate DRL ...")
             drl_thread.join()
@@ -54,7 +54,7 @@ def monitor_process(ns3_process, drl_thread):
         time.sleep(1)
 
     # If DRL crashes, we should terminate NS-3
-    if not drl_thread.is_active():
+    if not drl_thread.is_alive():
         print("Error: DRL crashed! Terminate NS-3 process ...")
         ns3_process.terminate()   # Forcefully stop NS-3
         ns3_process.wait()        # Ensure it stops completely
