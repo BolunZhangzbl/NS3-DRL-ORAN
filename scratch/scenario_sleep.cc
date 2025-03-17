@@ -303,7 +303,6 @@ void NetworkScenario::periodically_interact_with_agent()
         }
         close(fd1);
 
-        // 🛠 **New: Call apply_network_conf() to ensure network updates**
         this->apply_network_conf();  // This may update additional log files
 
     }
