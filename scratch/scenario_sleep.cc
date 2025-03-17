@@ -282,7 +282,39 @@ void NetworkScenario::dump_initial_state()
 
 void NetworkScenario::periodically_interact_with_agent()
 {
-    /** STEP 1: NS-3 waits for DRL agent to be ready **/
+    // Step 1: If this is the first cycle (i.e., initial 100ms), don't wait for DRL.
+    if (this->timestep() < 100) {
+        // In the first 100ms, proceed normally without waiting for the DRL agent
+        std::cout << "Running the first cycle (initial 100ms) without waiting for DRL..." << std::endl;
+
+        // Prepare state info (Tx power) as usual
+        std::stringstream ss;
+        for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+            ss << this->enb_power[i] << ",";
+        }
+        std::string tx_power_str = ss.str();
+        std::cout << "Current Tx Power: " << tx_power_str << std::endl;
+
+        int fd1 = open("fifo1", O_WRONLY);
+        if (fd1 == -1) {
+            std::cerr << "Error: Could not open fifo1" << std::endl;
+            return;
+        }
+
+        // Write the Tx power to fifo1
+        if (write(fd1, tx_power_str.c_str(), tx_power_str.size()) == -1) {
+            std::cerr << "Error: Failed to write to fifo1" << std::endl;
+            close(fd1);
+            return;
+        }
+
+        close(fd1);
+
+        // Allow the DRL agent to work in parallel, without waiting for it yet
+        return;  // Just exit the function and wait for the next cycle
+    }
+
+    /** STEP 2: NS-3 waits for DRL agent to be ready (after the first 100ms) **/
     sem_wait(this->drl_ready);
 
     int fd1 = open("fifo1", O_WRONLY);
@@ -293,8 +325,8 @@ void NetworkScenario::periodically_interact_with_agent()
         return;
     }
 
-    // Prepare state info (Tx power)
-    std::cout<<"Starting to send \n";
+    // Prepare state info (Tx power) as usual
+    std::cout << "Starting to send\n";
     std::stringstream ss;
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
         ss << this->enb_power[i] << ",";
@@ -313,7 +345,7 @@ void NetworkScenario::periodically_interact_with_agent()
     // Signal DRL agent that new state is available
     sem_post(this->ns3_ready);
 
-    /** STEP 2: NS-3 waits for DRL to send new actions **/
+    /** STEP 3: NS-3 waits for DRL to send new actions **/
     sem_wait(this->drl_ready);
 
     char rbuf[50];
@@ -366,7 +398,7 @@ void NetworkScenario::periodically_interact_with_agent()
         return;
     }
 
-    /** STEP 3: Apply actions: Set power to zero for eNBs in sleep mode (0), else set to 44 **/
+    /** STEP 4: Apply actions: Set power to zero for eNBs in sleep mode (0), else set to 44 **/
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
         this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
     }

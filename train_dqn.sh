@@ -4,8 +4,8 @@
 script="train_dqn.py"
 
 # Default values (as per the parser default)
-use_cuda=True  # Whether to use CUDA for GPU acceleration
-use_wandb=False  # Whether to log metrics to Weights & Biases
+use_cuda=true  # Whether to use CUDA for GPU acceleration
+use_wandb=false  # Whether to log metrics to Weights & Biases
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]
