@@ -29,6 +29,17 @@ def run_scenario(args):
     # Run NS-3 in a separate process
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    # Read stdout and stderr in real-time
+    while True:
+        stdout_line = process.stdout.readline()
+        stderr_line = process.stderr.readline()
+        if stdout_line:
+            print(stdout_line.decode(), end="")
+        if stderr_line:
+            print(stderr_line.decode(), end="")
+        if stdout_line == b"" and stderr_line == b"" and process.poll() is not None:
+            break
+
     return process
 
 
