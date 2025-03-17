@@ -50,15 +50,38 @@ class ORANSimEnv(gym.Env):
         assert len(action) == self.num_enb
 
         # STEP 1: Wait for NS-3 to finish and DRL to send actions
-        self.ns3_ready.acquire()                 # Block until NS-3 signals it's ready
-        self._send_action(action)                 # Send action to NS-3
+        start_time = time.time()  # Start timer for Step 1
+        print(f"Step 1: Waiting for NS-3 to signal it's ready...")
+        self.ns3_ready.acquire()  # Block until NS-3 signals it's ready
+        print(f"Step 1: NS-3 is ready. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
+
+        # Send action to NS-3
+        self._send_action(action)
+        print(f"Step 1: Action sent to NS-3.")
 
         # STEP 2: Wait for NS-3 to update and be ready with the next state
-        self.drl_ready.release()                  # Signal DRL is ready for new data
+        start_time = time.time()  # Start timer for Step 2
+        print(f"Step 2: Signaling DRL is ready for new data.")
+        self.drl_ready.release()  # Signal DRL that it is ready for new data
+        print(f"Step 2: DRL ready signal sent. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
 
-        next_state = self._get_obs()              # Wait for ns-3 update, then get new state
-        reward = self._get_reward(next_state)     # Calculate the reward based on the new state after performing action
-        self.done = self._get_done(reward)        # Get done info given the reward
+        # Get the new state from NS-3
+        start_time = time.time()  # Start timer for _get_obs
+        print(f"Step 3: Getting new state from NS-3...")
+        next_state = self._get_obs()  # Wait for NS-3 update, then get new state
+        print(f"Step 3: State received. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
+
+        # Calculate reward based on the new state
+        start_time = time.time()  # Start timer for _get_reward
+        print(f"Step 4: Calculating reward based on new state...")
+        reward = self._get_reward(next_state)
+        print(f"Step 4: Reward calculated. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
+
+        # Check if the episode is done
+        start_time = time.time()  # Start timer for _get_done
+        print(f"Step 5: Checking if episode is done...")
+        self.done = self._get_done(reward)
+        print(f"Step 5: Done status checked. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
 
         return next_state, reward, self.done
 
