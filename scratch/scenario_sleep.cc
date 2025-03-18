@@ -106,7 +106,7 @@ void NetworkScenario::initialize(
         this->active_power = active_power;
 
         // Initialize semaphores
-        this->drl_ready = sem_open("/drl_ready", O_CREAT, 0666, 1);  // drl_ready: 1 initially
+        this->drl_ready = sem_open("/drl_ready", O_CREAT, 0666, 0);  // drl_ready: 1 initially
         this->ns3_ready = sem_open("/ns3_ready", O_CREAT, 0666, 0);  // ns3_ready: 0 initially
 
         if (this->ns3_ready == SEM_FAILED || this->drl_ready == SEM_FAILED) {
@@ -285,85 +285,60 @@ void NetworkScenario::dump_initial_state()
 
 void NetworkScenario::periodically_interact_with_agent()
 {
-    // Step 1: Wait for DRL agent to send actions after timestep >= 100ms
-    sem_wait(this->drl_ready);
+    if (this->timestep >= 100) {
+        // Step 1: Wait for DRL to send new actions (Read from JSON file)
+        sem_wait(this->drl_ready);
 
-    // Create a JSON object to hold Tx power
-    json tx_power_json;
+        // Resume NS-3 Logging After DRL Interaction
+//        Config::Set("/NodeList/*/DeviceList/*/LteEnbMac/DlMacStatsLogging", BooleanValue(true));
+//        Config::Set("/NodeList/*/DeviceList/*/LteEnbPhy/DlRxPhyStatsLogging", BooleanValue(true));
+//        Config::Set("/NodeList/*/DeviceList/*/LteEnbPhy/DlRsrpSinrStatsLogging", BooleanValue(true));
 
-    // Prepare state info (Tx power)
-    std::stringstream ss;
-    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        ss << this->enb_power[i] << ",";
-    }
-    std::string tx_power_str = ss.str();
-    std::cout << "Current Tx Power: " << tx_power_str << std::endl;
-
-    // Save the Tx power as a JSON array
-    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        tx_power_json.push_back(this->enb_power[i]);  // Add each power value to the JSON array
-    }
-
-    // Write Tx power to JSON file
-    try {
-        std::ofstream tx_file("tx_power.json");
-        if (tx_file.is_open()) {
-            tx_file << tx_power_json.dump();  // Write JSON to file
-            tx_file.close();
-        } else {
-            throw std::ios_base::failure("Could not open tx_power.json for writing");
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Error writing to tx_power.json: " << e.what() << std::endl;
-        return;
-    }
-
-    // Signal DRL agent that new state is available
-    sem_post(this->ns3_ready);
-
-    // Step 2: Wait for DRL to send new actions (Read from JSON file)
-    sem_wait(this->drl_ready);
-
-    // Read action from JSON file
-    try {
-        std::ifstream action_file("actions.json");
-        if (!action_file.is_open()) {
-            throw std::ios_base::failure("Could not open actions.json for reading");
-        }
-
-        json action_json;
-        action_file >> action_json;  // Read JSON data into the action_json object
-
-        // Parse the action vector
-        std::vector<int> action_vector;
-        for (auto& action : action_json) {
-            int action_value = action.get<int>();
-            if (action_value != 0 && action_value != 1) {
-                std::cerr << "Error: Invalid action value (must be 0 or 1): " << action_value << std::endl;
-                continue;
+        // Read action from JSON file
+        try {
+            std::ifstream action_file("actions.json");
+            if (!action_file.is_open()) {
+                throw std::ios_base::failure("Could not open actions.json for reading");
             }
-            action_vector.push_back(action_value);
-        }
 
-        if (action_vector.size() != this->enb_nodes.GetN()) {
-            std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
+            json action_json;
+            action_file >> action_json;  // Read JSON data into the action_json object
+
+            // Parse the action vector
+            std::vector<int> action_vector;
+            for (auto& action : action_json) {
+                int action_value = action.get<int>();
+                if (action_value != 0 && action_value != 1) {
+                    std::cerr << "Error: Invalid action value (must be 0 or 1): " << action_value << std::endl;
+                    continue;
+                }
+                action_vector.push_back(action_value);
+            }
+
+            if (action_vector.size() != this->enb_nodes.GetN()) {
+                std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
+                return;
+            }
+
+            // Step 2: Apply actions to the eNB nodes based on the action vector
+            for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+                this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
+            }
+
+            this->apply_network_conf();
+        } catch (const std::exception& e) {
+            std::cerr << "Error reading from actions.json: " << e.what() << std::endl;
             return;
         }
 
-        // Step 3: Apply actions to the eNB nodes based on the action vector
-        for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-            this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
-        }
+        // Signal DRL agent that NS-3 is ready for the next cycle
+        sem_post(this->ns3_ready);
 
-        this->apply_network_conf();
-    } catch (const std::exception& e) {
-        std::cerr << "Error reading from actions.json: " << e.what() << std::endl;
-        return;
+        // Pause NS-3 Logging for Specific Files
+//        Config::Set("/NodeList/*/DeviceList/*/LteEnbMac/DlMacStatsLogging", BooleanValue(false));
+//        Config::Set("/NodeList/*/DeviceList/*/LteEnbPhy/DlRxPhyStatsLogging", BooleanValue(false));
+//        Config::Set("/NodeList/*/DeviceList/*/LteEnbPhy/DlRsrpSinrStatsLogging", BooleanValue(false));
     }
-
-    // Signal DRL agent that NS-3 is ready for the next cycle
-    sem_post(this->ns3_ready);
-
     // Reschedule the next interaction after this->interaction_interval (default 100 ms)
     Simulator::Schedule(MilliSeconds(this->it_period), &NetworkScenario::periodically_interact_with_agent, this);
 }

@@ -33,8 +33,10 @@ class ORANSimEnv(gym.Env):
         self.reward_threshold = int(1e6)
 
         # JSON file paths for communication
-        self.tx_power_file = "/home/bolun/ns-3-dev/tx_power.json"  # File where NS-3 writes Tx power
-        self.actions_file = "/home/bolun/ns-3-dev/actions.json"  # File where DRL writes actions
+        self.actions_file = "actions.json"  # File where DRL writes actions
+        if not os.path.exists(self.actions_file):
+            with open(self.actions_file, "w") as f:
+                json.dump({}, f)
 
         # Semaphore connections
         try:
@@ -48,46 +50,20 @@ class ORANSimEnv(gym.Env):
 
     def step(self, action):
         assert len(action) == self.num_enb
-
-        # STEP 1: Wait for NS-3 to finish and DRL to send actions
-        start_time = time.time()  # Start timer for Step 1
-        print(f"Step 1: Waiting for NS-3 to signal it's ready...")
-        self.ns3_ready.acquire()  # Block until NS-3 signals it's ready
-        print(f"Step 1: NS-3 is ready. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
-
         # Send action to NS-3
         self._send_action(action)
-        print(f"Step 1: Action sent to NS-3.")
-
-        # STEP 2: Wait for NS-3 to update and be ready with the next state
-        start_time = time.time()  # Start timer for Step 2
-        print(f"Step 2: Signaling DRL is ready for new data.")
         self.drl_ready.release()  # Signal DRL that it is ready for new data
-        print(f"Step 2: DRL ready signal sent. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
 
-        # Get the new state from NS-3
-        start_time = time.time()  # Start timer for _get_obs
-        print(f"Step 3: Getting new state from NS-3...")
-        next_state = self._get_obs()  # Wait for NS-3 update, then get new state
-        print(f"Step 3: State received. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
-
-        # Calculate reward based on the new state
-        start_time = time.time()  # Start timer for _get_reward
-        print(f"Step 4: Calculating reward based on new state...")
+        self.ns3_ready.acquire()  # Block until NS-3 signals it's ready
+        next_state = self._get_obs(action)  # Wait for NS-3 update, then get new state
         reward = self._get_reward(next_state)
-        print(f"Step 4: Reward calculated. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
-
-        # Check if the episode is done
-        start_time = time.time()  # Start timer for _get_done
-        print(f"Step 5: Checking if episode is done...")
         self.done = self._get_done(reward)
-        print(f"Step 5: Done status checked. Took {time.time() - start_time:.2f} seconds.")  # Log time spent
 
         return next_state, reward, self.done
 
     def reset(self):
         self.done = False
-        state = self._get_obs()
+        state = self._get_obs(None)
 
         return state
 
@@ -95,13 +71,16 @@ class ORANSimEnv(gym.Env):
         self.ns3_ready.close()
         self.drl_ready.close()
 
-    def _get_obs(self, action):
+    def _get_obs(self, action=None):
         df_state = self.data_parser.aggregate_kpms()
         self.latest_time = self.data_parser.last_read_time
 
         # Add Tx power from ORAN scenario
         # data_tx_power = self._read_tx_power_json()
-        data_tx_power = [44 if val else 0 for val in action]
+        if action is not None:
+            data_tx_power = [44 if val else 0 for val in action]
+        else:
+            data_tx_power = [44] * self.num_enb
         df_state['tx_power'] = data_tx_power[:len(df_state)]
         df_state = df_state.drop(columns=['cellId'], errors='ignore')
 
@@ -119,16 +98,16 @@ class ORANSimEnv(gym.Env):
 
         return True if reward >= self.reward_threshold else False
 
-    def _read_tx_power_json(self):
-        """Read Tx power data from JSON file."""
-        try:
-            with open(self.tx_power_file, 'r') as f:
-                tx_power_data = json.load(f)
-                # Make sure to return the power values
-                return tx_power_data if isinstance(tx_power_data, list) else [self.active_power] * self.num_enb
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Warning: Error reading {self.tx_power_file}: {e}, using default values.")
-        return [self.active_power] * self.num_enb
+    # def _read_tx_power_json(self):
+    #     """Read Tx power data from JSON file."""
+    #     try:
+    #         with open(self.tx_power_file, 'r') as f:
+    #             tx_power_data = json.load(f)
+    #             # Make sure to return the power values
+    #             return tx_power_data if isinstance(tx_power_data, list) else [self.active_power] * self.num_enb
+    #     except (FileNotFoundError, json.JSONDecodeError) as e:
+    #         print(f"Warning: Error reading {self.tx_power_file}: {e}, using default values.")
+    #     return [self.active_power] * self.num_enb
 
     def _send_action(self, action):
         """Write the action to the JSON file."""

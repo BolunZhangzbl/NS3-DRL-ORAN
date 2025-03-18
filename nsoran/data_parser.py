@@ -56,7 +56,7 @@ class DataParser:
                              skiprows=1, index_col=False, usecols=usecols)
             self.time_step += 1
             print(f"Successfully read the file {filename}")
-            # print(f"Initial DataFrame (Step {self.time_step}):\n{df.head()}")  # Debug: Check DataFrame after read
+            # print(f"Initial DataFrame (Step {self.time_step}):\n{df.head()}")
         except Exception as e:
             print(f"Error reading the file {filename}: {e}")
             return pd.DataFrame(), None

@@ -26,4 +26,6 @@ def main():
 
     run_drl(args)
 
-    return 0
+
+if __name__ == '__main__':
+    main()
