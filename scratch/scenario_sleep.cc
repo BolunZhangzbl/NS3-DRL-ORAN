@@ -289,34 +289,40 @@ void NetworkScenario::periodically_interact_with_agent()
         // Step 1: Wait for DRL to send new actions (Read from JSON file)
         sem_wait(this->drl_ready);
 
-        // Resume NS-3 Logging After DRL Interaction
-//        Config::Set("/NodeList/*/DeviceList/*/LteEnbMac/DlMacStatsLogging", BooleanValue(true));
-//        Config::Set("/NodeList/*/DeviceList/*/LteEnbPhy/DlRxPhyStatsLogging", BooleanValue(true));
-//        Config::Set("/NodeList/*/DeviceList/*/LteEnbPhy/DlRsrpSinrStatsLogging", BooleanValue(true));
-
-        // Read action from JSON file
         try {
+            // Read action from JSON file
             std::ifstream action_file("actions.json");
             if (!action_file.is_open()) {
-                throw std::ios_base::failure("Could not open actions.json for reading");
+                std::cerr << "Error: Could not open actions.json for reading" << std::endl;
+                sem_post(this->ns3_ready);  // Always post the semaphore to prevent deadlock
+                return;
             }
 
             json action_json;
-            action_file >> action_json;  // Read JSON data into the action_json object
+            action_file >> action_json;  // Read JSON data into action_json object
+
+            // Ensure that the "actions" key exists and is an array
+            if (!action_json.contains("actions") || !action_json["actions"].is_array()) {
+                std::cerr << "Error: Invalid JSON format. 'actions' array not found." << std::endl;
+                sem_post(this->ns3_ready);  // Always post the semaphore to prevent deadlock
+                return;
+            }
 
             // Parse the action vector
             std::vector<int> action_vector;
-            for (auto& action : action_json) {
+            for (auto& action : action_json["actions"]) {
                 int action_value = action.get<int>();
                 if (action_value != 0 && action_value != 1) {
                     std::cerr << "Error: Invalid action value (must be 0 or 1): " << action_value << std::endl;
-                    continue;
+                    continue;  // Skip invalid actions
                 }
                 action_vector.push_back(action_value);
             }
 
+            // Ensure the action vector size matches the number of eNBs
             if (action_vector.size() != this->enb_nodes.GetN()) {
                 std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
+                sem_post(this->ns3_ready);  // Always post the semaphore to prevent deadlock
                 return;
             }
 
@@ -326,23 +332,20 @@ void NetworkScenario::periodically_interact_with_agent()
             }
 
             this->apply_network_conf();
+
         } catch (const std::exception& e) {
-            std::cerr << "Error reading from actions.json: " << e.what() << std::endl;
+            std::cerr << "Exception while reading actions.json: " << e.what() << std::endl;
+            sem_post(this->ns3_ready);  // Always post the semaphore to prevent deadlock
             return;
         }
 
         // Signal DRL agent that NS-3 is ready for the next cycle
         sem_post(this->ns3_ready);
-
-        // Pause NS-3 Logging for Specific Files
-//        Config::Set("/NodeList/*/DeviceList/*/LteEnbMac/DlMacStatsLogging", BooleanValue(false));
-//        Config::Set("/NodeList/*/DeviceList/*/LteEnbPhy/DlRxPhyStatsLogging", BooleanValue(false));
-//        Config::Set("/NodeList/*/DeviceList/*/LteEnbPhy/DlRsrpSinrStatsLogging", BooleanValue(false));
     }
+
     // Reschedule the next interaction after this->interaction_interval (default 100 ms)
     Simulator::Schedule(MilliSeconds(this->it_period), &NetworkScenario::periodically_interact_with_agent, this);
 }
-
 
 void NetworkScenario::enable_trace()
 {
