@@ -35,7 +35,7 @@ class ActionMapper:
         binary_str = format(idx, f"0{int(np.log2(self.maxVal - self.minVal + 1))}b")
 
         # Convert the binary string to a list of boolean values
-        return [bool(int(bit)) for bit in binary_str]
+        return [int(bit) for bit in binary_str]
 
 
 def save_lists(file_path, ep_rewards, step_rewards, avg_rewards,
