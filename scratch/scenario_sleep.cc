@@ -285,7 +285,7 @@ void NetworkScenario::dump_initial_state()
 
 void NetworkScenario::periodically_interact_with_agent()
 {
-    if (this->timestep() >= 0) {
+    if (this->timestep() >= 100) {
         // Step 1: Wait for DRL to send new actions (Read from JSON file)
         sem_wait(this->drl_ready);
 
