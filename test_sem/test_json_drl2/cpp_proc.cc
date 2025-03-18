@@ -26,7 +26,7 @@ int main() {
 
             sem_post(sem_py);  // Signal Python for next iteration
         }
-        std::cout << "[C++] Updating Network Simulator......!!!!!!"
+        std::cout << "[C++] Updating Network Simulator......!!!!!!" << std::endl;
     }
 
     // Cleanup
