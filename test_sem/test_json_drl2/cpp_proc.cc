@@ -12,7 +12,7 @@ int main() {
     sem_t *sem_cpp = sem_open("/sem_cpp_json_drl", O_CREAT, 0666, 0);  // C++ starts first
     sem_t *sem_py = sem_open("/sem_py_json_drl", O_CREAT, 0666, 0);
 
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 10; i++) {
         if (i > 0) {
             sem_wait(sem_cpp);  // Wait for Python to write to data2.json
 
@@ -26,7 +26,7 @@ int main() {
 
             sem_post(sem_py);  // Signal Python for next iteration
         }
-        std::cout << "[C++] Updating Network Simulator......!!!!!!" << std::endl;
+        std::cout << "[C++] Step: " << i << "Updating Network Simulator......!!!!!!" << std::endl;
     }
 
     // Cleanup

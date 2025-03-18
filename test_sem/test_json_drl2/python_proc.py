@@ -77,13 +77,14 @@ class DRLRunner:
     def run(self):
         print("\n[Python] Starting DRL-Agent-Environment interaction...\n")
         for ep in range(self.num_episodes):
-            print(f"\n\n[Python] Episode {ep + 1}/{self.num_episodes} begins...")
+            print(f"\n\n[Python] Episode {ep}/{self.num_episodes} begins...")
 
             for step in range(self.max_step):
+                print(f"[Python] Step {step}/{ep}...")
                 action = self.agent.act()
                 self.env.step(action)
 
-            print(f"[Python] Episode {ep + 1} complete!\n\n")
+            print(f"[Python] Episode {ep} complete!\n\n")
 
         self.env.close()
         print("\n[Python] DRL-Agent-Environment interaction finished!\n")
