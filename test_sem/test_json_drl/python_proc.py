@@ -30,7 +30,7 @@ class Env:
 
     def step(self, action, step):
         print("[Python] waiting for C++...")
-        if step==0:
+        if step != 0:
             self.sem_py.acquire()
 
         self._send_action(action)
