@@ -40,9 +40,9 @@ class ORANSimEnv(gym.Env):
         try:
             self.ns3_ready = posix_ipc.Semaphore("/ns3_ready")
             self.drl_ready = posix_ipc.Semaphore("/drl_ready")
-        except posix_ipc.ExistentialError as e:
-            logging.error("Semaphore not found. Ensure NS-3 has initialized them in /dev/shm/")
-            raise e
+        except posix_ipc.ExistentialError:
+            self.ns3_ready = posix_ipc.Semaphore("/ns3_ready", flags=posix_ipc.O_CREAT, initial_value=0)
+            self.drl_ready = posix_ipc.Semaphore("/drl_ready", flags=posix_ipc.O_CREAT, initial_value=0)
 
         print("Initializing environment with JSON-based communication...")
 
@@ -91,12 +91,17 @@ class ORANSimEnv(gym.Env):
 
         return state
 
-    def _get_obs(self):
+    def close(self):
+        self.ns3_ready.close()
+        self.drl_ready.close()
+
+    def _get_obs(self, action):
         df_state = self.data_parser.aggregate_kpms()
         self.latest_time = self.data_parser.last_read_time
 
         # Add Tx power from ORAN scenario
-        data_tx_power = self._read_tx_power_json()
+        # data_tx_power = self._read_tx_power_json()
+        data_tx_power = [44 if val else 0 for val in action]
         df_state['tx_power'] = data_tx_power[:len(df_state)]
         df_state = df_state.drop(columns=['cellId'], errors='ignore')
 

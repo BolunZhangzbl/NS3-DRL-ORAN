@@ -8,8 +8,9 @@
 #include <thread>
 
 using json = nlohmann::json;
-using namespace std::chrono;
 
+
+using namespace std::chrono;
 int main() {
     // Create semaphores
     sem_t *sem_cpp = sem_open("/sem_cpp_json_drl", O_CREAT, 0666, 0);
@@ -17,8 +18,9 @@ int main() {
 
     auto last_interaction_time = steady_clock::now(); // Track the last interaction time
     int step = 0;
+    int interaction_count = 0;
 
-    while (true) {
+    while (interaction_count<10) {
         // Constantly updating network simulator
         std::cout << "[C++] Step: " << step << " Updating Network Simulator......!!!!!!" << std::endl;
         std::this_thread::sleep_for(milliseconds(10));  // Simulating small network updates
@@ -39,6 +41,8 @@ int main() {
             std::cout << "[C++] Applied " << data2["message"] << " to Network" << std::endl;
 
             sem_post(sem_py);  // Signal Python for next iteration
+
+            interaction_count++;
         }
 
         step++;  // Increment step counter

@@ -68,7 +68,7 @@ class DQNRunner:
 
     def _run_episode(self, episode):
         """Run a single episode of training."""
-        state = self.env.reset()
+        state = self.env.reset()  # receive ns3_ready
         episode_reward = 0
         episode_loss = 0
 

@@ -49,8 +49,8 @@ class NetworkScenario
         int sim_time;
         int active_power;
 
-        sem_t *ns3_ready;
         sem_t *drl_ready;
+        sem_t *ns3_ready;
 
         Ptr<FlowMonitor> Monitor;
         FlowMonitorHelper flowmon;
@@ -106,8 +106,8 @@ void NetworkScenario::initialize(
         this->active_power = active_power;
 
         // Initialize semaphores
-        this->ns3_ready = sem_open("/ns3_ready", O_CREAT, 0644, 0);  // ns3_ready: 0 initially
-        this->drl_ready = sem_open("/drl_ready", O_CREAT, 0644, 0);  // drl_ready: 0 initially
+        this->drl_ready = sem_open("/drl_ready", O_CREAT, 0666, 1);  // drl_ready: 1 initially
+        this->ns3_ready = sem_open("/ns3_ready", O_CREAT, 0666, 0);  // ns3_ready: 0 initially
 
         if (this->ns3_ready == SEM_FAILED || this->drl_ready == SEM_FAILED) {
             std::cerr << "Error: Could not open semaphores." << std::endl;
@@ -127,9 +127,6 @@ void NetworkScenario::initialize(
 void NetworkScenario::run(){
     // this->dump_initial_state();
 
-    mkfifo("fifo1", 0666);
-    mkfifo("fifo2", 0666);
-
     this->periodically_interact_with_agent();
 
     this->Monitor = this->flowmon.Install(this->ue_nodes);
@@ -140,6 +137,11 @@ void NetworkScenario::run(){
 
     this->printStats(this->flowmon,true);
     Simulator::Destroy();
+
+    sem_close(drl_ready);
+    sem_close(ns3_ready);
+    sem_unlink('/drl_ready');
+    sem_unlink('/ns3_ready');
 }
 
 void NetworkScenario::create_enb_nodes(){
@@ -280,35 +282,11 @@ void NetworkScenario::dump_initial_state()
     std::cout << this->timestep() << " ms: Seed " << std::endl;
 }
 
-//void NetworkScenario::periodically_interact_with_agent()
-//{
-//    if (this->timestep() < 100) {
-//        std::cout << "Timestep: " << this->timestep() << std::endl;
-//
-//        // Apply network configuration (e.g., update Tx Power)
-//        this->apply_network_conf();
-//
-//        // Continue scheduling the function to ensure updates happen at the next interval
-//        Simulator::Schedule(MilliSeconds(this->it_period), &NetworkScenario::periodically_interact_with_agent, this);
-//    } else {
-//        // After 100ms, stop automatic updates and wait for DRL signal
-//        std::cout << "Paused at timestep " << this->timestep()
-//                  << ", waiting for DRL signal..." << std::endl;
-//
-//        sem_wait(this->drl_ready); // Pause execution until DRL agent is ready
-//
-//        // Resume when DRL agent responds
-//        Simulator::Schedule(MilliSeconds(this->it_period), &NetworkScenario::periodically_interact_with_agent, this);
-//    }
-//}
-
 
 void NetworkScenario::periodically_interact_with_agent()
 {
     // Step 1: Wait for DRL agent to send actions after timestep >= 100ms
-    if (this->timestep() >= 100) {
-        sem_wait(this->drl_ready);  // Wait for DRL agent to be ready
-    }
+    sem_wait(this->drl_ready);
 
     // Create a JSON object to hold Tx power
     json tx_power_json;
