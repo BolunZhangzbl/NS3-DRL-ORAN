@@ -39,7 +39,7 @@ class DataParser:
         self.time_step = 0
         self.it_period = args.it_period   # in ms
         self.num_enb = args.num_enb
-        self.last_read_time = None        # Store the last processed timestamp
+        self.last_read_time = 0        # Store the last processed timestamp
 
     def read_kpms(self, kpm_type):
         assert kpm_type in dict_kpms
