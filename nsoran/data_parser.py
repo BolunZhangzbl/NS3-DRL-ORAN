@@ -104,7 +104,7 @@ class DataParser:
         df_sinr = self.read_kpms(kpm_type='sinr')
         df_prb = self.read_kpms(kpm_type='prb')
         
-        # print(f"self.last_read_time: {self.last_read_time}")
+        print(f"self.last_read_time: {self.last_read_time}")
         # print("df_tp columns:", df_tp.columns)
         # print("df_sinr columns:", df_sinr.columns)
         # print("df_prb columns:", df_prb.columns)

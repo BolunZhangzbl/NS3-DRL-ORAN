@@ -140,8 +140,8 @@ void NetworkScenario::run(){
 
     sem_close(drl_ready);
     sem_close(ns3_ready);
-    sem_unlink('/drl_ready');
-    sem_unlink('/ns3_ready');
+    sem_unlink("/drl_ready");
+    sem_unlink("/ns3_ready");
 }
 
 void NetworkScenario::create_enb_nodes(){
