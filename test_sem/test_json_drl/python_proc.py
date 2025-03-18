@@ -28,8 +28,11 @@ class Env:
             self.sem_cpp = posix_ipc.Semaphore("/sem_cpp_json_drl", flags=posix_ipc.O_CREAT, initial_value=1)
             self.sem_py = posix_ipc.Semaphore("/sem_py_json_drl", flags=posix_ipc.O_CREAT, initial_value=0)
 
-    def step(self, action):
+    def step(self, action, step):
         print("[Python] waiting for C++...")
+        if step==0:
+            self.sem_py.acquire()
+
         self._send_action(action)
 
         self._get_obs()
@@ -78,7 +81,7 @@ class DRLRunner:
             for step in range(self.max_step):
                 action = self.agent.act()
 
-                self.env.step(action)
+                self.env.step(action, step)
 
         self.env.close()
 
