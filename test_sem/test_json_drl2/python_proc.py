@@ -44,24 +44,21 @@ class Env:
         # self.sem_cpp.release()  # Signal C++ to proceed
 
     def reset(self):
-        print("\n[Python] Resetting environment...\n")
+        print("\n[Python] Get Reset State...\n")
         self._get_obs()
 
     def _get_obs(self):
         # self.sem_py.acquire()  # Wait for C++ signal
-        with open("data1.json", "r") as f1:
-            data1 = json.load(f1)
-        print(f"[Python] Received from C++ -> State: {data1['message']}\n")
+        print(f"[Python] Generate State Info...")
 
     def _get_reward(self):
-        print("[Python] Processing reward...\n")
+        print("[Python] Processing reward...")
 
-    def _send_action(self, data2):
-        with open("data2.json", "w") as f2:
-            json.dump(data2, f2, indent=4)
-        print(f"[Python] Sent to C++ -> Action: {data2['message']}\n")
-
-        print("[Python] Signaling C++ to read action...\n")
+    def _send_action(self, data):
+        with open("data.json", "w") as f:
+            json.dump(data, f, indent=4)
+        print(f"[Python] Sent to C++ -> Action: {data['message']}")
+        print("[Python] Signaling C++ to read action...")
         # self.sem_cpp.release()  # Signal C++ that new action is available
 
     def close(self):
@@ -80,13 +77,13 @@ class DRLRunner:
     def run(self):
         print("\n[Python] Starting DRL-Agent-Environment interaction...\n")
         for ep in range(self.num_episodes):
-            print(f"\n\n[Python] Episode {ep + 1}/{self.num_episodes} begins...\n")
+            print(f"\n\n[Python] Episode {ep + 1}/{self.num_episodes} begins...")
 
             for step in range(self.max_step):
                 action = self.agent.act()
                 self.env.step(action)
 
-            print(f"\n[Python] Episode {ep + 1} complete!\n\n")
+            print(f"[Python] Episode {ep + 1} complete!\n\n")
 
         self.env.close()
         print("\n[Python] DRL-Agent-Environment interaction finished!\n")
