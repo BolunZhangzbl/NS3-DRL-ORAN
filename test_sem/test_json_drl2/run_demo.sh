@@ -20,5 +20,5 @@ python3 python_proc.py &
 wait
 
 # Cleanup
-rm -f cpp_proc data1.json data2.json
+rm -f cpp_proc data.json
 echo "Collaboration complete!"
