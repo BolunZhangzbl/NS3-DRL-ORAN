@@ -34,6 +34,19 @@ def run_scenario(args):
         universal_newlines=True  # Ensure output is treated as text
     )
 
+    # Stream stdout and stderr to the console in real-time
+    def stream_output(pipe, pipe_name):
+        for line in pipe:
+            print(f"[NS-3 {pipe_name}] {line}", end='')
+
+    # Create threads to stream stdout and stderr
+    stdout_thread = threading.Thread(target=stream_output, args=(process.stdout, "stdout"))
+    stderr_thread = threading.Thread(target=stream_output, args=(process.stderr, "stderr"))
+
+    # Start the threads
+    stdout_thread.start()
+    stderr_thread.start()
+
     return process
 
 
