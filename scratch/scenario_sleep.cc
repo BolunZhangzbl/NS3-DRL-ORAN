@@ -285,7 +285,7 @@ void NetworkScenario::dump_initial_state()
 
 void NetworkScenario::periodically_interact_with_agent()
 {
-    if (this->timestep() >= 100) {
+    if (this->timestep() >= 0) {
         // Step 1: Wait for DRL to send new actions (Read from JSON file)
         sem_wait(this->drl_ready);
 
@@ -294,8 +294,7 @@ void NetworkScenario::periodically_interact_with_agent()
             std::ifstream action_file("actions.json");
             if (!action_file.is_open()) {
                 std::cerr << "Error: Could not open actions.json for reading" << std::endl;
-                sem_post(this->ns3_ready);  // Always post the semaphore to prevent deadlock
-                return;
+                goto POST_SEMAPHORE;
             }
 
             json action_json;
@@ -304,8 +303,7 @@ void NetworkScenario::periodically_interact_with_agent()
             // Ensure that the "actions" key exists and is an array
             if (!action_json.contains("actions") || !action_json["actions"].is_array()) {
                 std::cerr << "Error: Invalid JSON format. 'actions' array not found." << std::endl;
-                sem_post(this->ns3_ready);  // Always post the semaphore to prevent deadlock
-                return;
+                goto POST_SEMAPHORE;
             }
 
             // Parse the action vector
@@ -313,8 +311,8 @@ void NetworkScenario::periodically_interact_with_agent()
             for (auto& action : action_json["actions"]) {
                 int action_value = action.get<int>();
                 if (action_value != 0 && action_value != 1) {
+                    action_value = rand() % 2;  // Assign random 0 or 1
                     std::cerr << "Error: Invalid action value (must be 0 or 1): " << action_value << std::endl;
-                    continue;  // Skip invalid actions
                 }
                 action_vector.push_back(action_value);
             }
@@ -322,8 +320,7 @@ void NetworkScenario::periodically_interact_with_agent()
             // Ensure the action vector size matches the number of eNBs
             if (action_vector.size() != this->enb_nodes.GetN()) {
                 std::cerr << "Error: Received action vector size does not match the number of eNBs" << std::endl;
-                sem_post(this->ns3_ready);  // Always post the semaphore to prevent deadlock
-                return;
+                goto POST_SEMAPHORE;
             }
 
             // Step 2: Apply actions to the eNB nodes based on the action vector
@@ -331,15 +328,16 @@ void NetworkScenario::periodically_interact_with_agent()
                 this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
             }
 
+            std::cerr << "Applying network configuration..." << std::endl;
             this->apply_network_conf();
+            std::cerr << "Network configuration applied successfully." << std::endl;
 
         } catch (const std::exception& e) {
             std::cerr << "Exception while reading actions.json: " << e.what() << std::endl;
-            sem_post(this->ns3_ready);  // Always post the semaphore to prevent deadlock
-            return;
         }
 
         // Signal DRL agent that NS-3 is ready for the next cycle
+    POST_SEMAPHORE:
         sem_post(this->ns3_ready);
     }
 
