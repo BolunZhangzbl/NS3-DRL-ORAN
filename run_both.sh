@@ -44,11 +44,11 @@ fi
 num_enb=4  # Number of eNBs
 ue_per_enb=3  # Number of UEs per eNB
 it_period=100  # Interaction Interval in milliseconds
-sim_time=10  # Simulation time in seconds
+sim_time=300  # Simulation time in seconds
 
 # DRL parameters
 max_step=100  # Maximum number of steps per episode
-num_episodes=30  # Total number of episodes for training
+num_episodes=300  # Total number of episodes for training
 last_n=10  # Number of last episodes for evaluation
 dqn_lr=1e-3  # Learning rate for the DQN network
 gamma=0.99  # Discount factor for future rewards
