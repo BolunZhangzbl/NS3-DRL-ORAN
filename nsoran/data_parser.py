@@ -103,6 +103,7 @@ class DataParser:
         df_aggregated = self.fill_missing_cellid(df_aggregated)  # Your existing method
 
         # Step 4: Update last_read_time AFTER processing all files
+        print(f"self.last_read_time: {self.last_read_time}   end_time: {end_time}")
         if end_time>self.last_read_time:
             self.last_read_time = end_time
 
