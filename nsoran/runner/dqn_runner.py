@@ -45,6 +45,7 @@ class DQNRunner:
     def run(self):
         try:
             """Train the DRL agent over multiple episodes."""
+            print(f"self.args.num_episodes: {self.args.num_episodes}")
             for episode in range(self.args.num_episodes):
                 if episode == 0:
                     time.sleep(5)
@@ -106,7 +107,7 @@ class DQNRunner:
                         "Average Loss": avg_loss,
                     })
 
-                print(f"Episode: {episode}/{self.args.num_episode}: "
+                print(f"Episode: {episode}/{self.args.num_episodes}: "
                       f"Total Reward = {episode_reward:.2e}, "
                       f"Avg Reward = {avg_reward:.2e}, "
                       f"Avg Loss = {avg_loss:.2e}")

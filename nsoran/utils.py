@@ -44,10 +44,10 @@ def save_lists(file_path, ep_rewards, step_rewards, avg_rewards,
     if os.path.exists(file_path):
         os.makedirs(file_path, exist_ok=True)
 
-    # np.savetxt(os.path.join(file_path, r"ep_rewards.txt"), ep_rewards)
-    # np.savetxt(os.path.join(file_path, r"step_rewards.txt"), step_rewards)
-    # np.savetxt(os.path.join(file_path, r"avg_rewards.txt"), avg_rewards)
-    # np.savetxt(os.path.join(file_path, r"step_losses.txt"), step_losses)
+    np.savetxt(os.path.join(file_path, r"ep_rewards.txt"), ep_rewards)
+    np.savetxt(os.path.join(file_path, r"step_rewards.txt"), step_rewards)
+    np.savetxt(os.path.join(file_path, r"avg_rewards.txt"), avg_rewards)
+    np.savetxt(os.path.join(file_path, r"step_losses.txt"), step_losses)
 
     np.savez(os.path.join(file_path, r"training_metrics.npz"),
              ep_rewards=np.array(ep_rewards),
