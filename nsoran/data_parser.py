@@ -114,8 +114,9 @@ class DataParser:
         Convert time column to milliseconds if it is in seconds.
         """
         # Calculate the range of the time column
-        if df['time'].dtype == 'float':
+        if df['time'].dtype=='float' and df['time']<10:
             df['time'] *= 1000
+            df['time'] = df['time'].astype(int)
         return df
 
     def fill_missing_cellid(self, df):

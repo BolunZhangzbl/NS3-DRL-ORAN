@@ -20,7 +20,7 @@ dict_filenames = dict(
     prb='DlMacStats.txt'
 )
 
-kpm_type = 'prb'
+kpm_type = 'sinr'
 
 filename = dict_filenames.get(kpm_type)
 file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), filename))
@@ -37,3 +37,8 @@ columns = dict_columns.get(kpm_type)
 usecols = ['time', 'cellId'] + dict_kpms.get(kpm_type)
 df = pd.read_csv(file_path, sep='\s+', comment='%', index_col=False, names=columns, skiprows=1, usecols=usecols)
 print(df['time'][0], df['time'].dtype == 'float')
+
+if df['time'].dtype == 'float':
+    df['time'] *= 1000
+    df['time'] = df['time'].astype(int)
+print(df[-30:])
