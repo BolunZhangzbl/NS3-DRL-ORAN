@@ -36,7 +36,6 @@ class DataParser:
 
     def __init__(self, args):
         self.last_read_time = 0
-        self.it_period = args.it_period
         self.num_enb = args.num_enb
 
     def get_latest_time(self, kpm_type):
@@ -117,7 +116,7 @@ class DataParser:
         Convert time column to milliseconds if it is in seconds.
         """
         # Calculate the range of the time column
-        if df['time'].max()<10:
+        if df['time'].dtype == 'float':
             df['time'] *= 1000
             df['time'] = df['time'].astype(int)
         return df
