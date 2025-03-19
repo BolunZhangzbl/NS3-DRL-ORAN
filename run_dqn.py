@@ -10,6 +10,9 @@ from nsoran.config import get_parser
 
 # -- Global Variables
 
+
+# -- Functions
+
 def run_drl(args):
     """
     Run the DRL agent to interact with NS-3 through FIFOs.

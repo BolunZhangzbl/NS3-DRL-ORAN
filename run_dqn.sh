@@ -10,8 +10,7 @@ if [ -e /dev/shm/sem.ns3_ready ]; then
 fi
 
 # Start C++ first (foreground), then Python (background)
-./waf --run scenario_sleep
-python3 train_dqn.py
+python3 run_dqn.py
 
 # Wait for background processes
 

@@ -54,6 +54,7 @@ class ORANSimEnv(gym.Env):
         self._send_action(action)
         self.drl_ready.release()  # Signal DRL that it is ready for new data
 
+        print("Waiting for ns3_ready")
         self.ns3_ready.acquire()  # Block until NS-3 signals it's ready
         next_state = self._get_obs(action)  # Wait for NS-3 update, then get new state
         reward = self._get_reward(next_state)
