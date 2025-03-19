@@ -111,13 +111,11 @@ class DataParser:
 
     def convert_time_to_ms(self, df):
         """
-        Convert time col to ms if its in sec
+        Convert time column to milliseconds if it is in seconds.
         """
-        if df['time'].max() < 1000:
+        # Calculate the range of the time column
+        if df['time'].dtype == 'float':
             df['time'] *= 1000
-            print(f"Convert sec to ms!")
-        else:
-            print("Already in ms!")
         return df
 
     def fill_missing_cellid(self, df):
