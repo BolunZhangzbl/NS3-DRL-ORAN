@@ -47,7 +47,7 @@ class DQNRunner:
             """Train the DRL agent over multiple episodes."""
             for episode in range(self.args.num_episodes):
                 if episode == 0:
-                    time.sleep(3)
+                    time.sleep(5)
                     state = self.env.reset()  # receive ns3_ready
 
                 episode_reward = 0

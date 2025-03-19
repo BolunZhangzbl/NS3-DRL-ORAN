@@ -84,7 +84,8 @@ class ORANSimEnv(gym.Env):
             data_tx_power = [44] * self.num_enb
         df_state['tx_power'] = data_tx_power[:len(df_state)]
         df_state = df_state.drop(columns=['cellId'], errors='ignore')
-        print(f"df_state: {df_state}")
+        print("df_state:")
+        print(df_state)
 
         data_state = df_state.to_numpy().flatten()
 
