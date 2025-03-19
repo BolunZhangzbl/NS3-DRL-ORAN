@@ -39,6 +39,7 @@ class DataParser:
         self.it_period = args.it_period
         self.num_enb = args.num_enb
 
+
     def get_latest_time(self, kpm_type):
         """Get the latest timestamp for a KPM file"""
         filename = dict_filenames.get(kpm_type)
@@ -86,6 +87,7 @@ class DataParser:
         end_time_sinr = self.get_latest_time('sinr')
         end_time_prb = self.get_latest_time('prb')
         end_time = min(end_time_tp, end_time_sinr, end_time_prb)
+        end_time = min(end_time, self.last_read_time+200)
 
         # Step 2: Read all KPMs within [last_read_time, end_time]
         df_tp = self.read_kpms('tp', self.last_read_time, end_time)
@@ -100,7 +102,7 @@ class DataParser:
         df_aggregated = self.fill_missing_cellid(df_aggregated)  # Your existing method
 
         # Step 4: Update last_read_time AFTER processing all files
-        if end_time > self.last_read_time:
+        if end_time>self.last_read_time:
             self.last_read_time = end_time
 
         return df_aggregated
@@ -117,21 +119,29 @@ class DataParser:
         return df
 
     def fill_missing_cellid(self, df):
-        """Ensure all cellIds are present, filling missing values with 0."""
-        expected_cellIds = pd.Series(range(1, self.num_enb + 1), name='cellId')
+        """
+        Ensure all expected cellIds are present, filling missing rows with 0 for numerical columns.
+        Maintains original data types for non-numeric columns.
+        """
+        # Convert cellId to integer and get expected IDs
+        df['cellId'] = df['cellId'].astype(int)
+        expected_cell_ids = range(1, self.num_enb + 1)
 
         # Create a DataFrame with all expected cellIds
-        full_df = pd.DataFrame({'cellId': expected_cellIds})
+        full_cell_ids = pd.DataFrame({'cellId': expected_cell_ids})
 
-        # Merge with existing data (acts like a right join)
-        df = full_df.merge(df, on='cellId', how='left')
+        # Merge to add missing cellIds (left join on full_cell_ids)
+        df = full_cell_ids.merge(df, on='cellId', how='left')
 
-        # Fill missing values with 0 for numerical columns
-        numerical_cols = ['tp', 'sinr', 'prb']
+        # Identify numerical columns to fill with 0
+        numerical_cols = df.select_dtypes(include=np.number).columns.tolist()
+        numerical_cols.remove('cellId')  # Skip cellId (it's already correct)
+
+        # Fill numerical columns with 0 where missing
         df[numerical_cols] = df[numerical_cols].fillna(0)
 
-        return df.sort_values('cellId')
-
+        # Sort and reset index
+        return df.sort_values('cellId').reset_index(drop=True)
 
 # class DataParser:
 #

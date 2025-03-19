@@ -1,5 +1,6 @@
 # -- Public Imports
 import os
+import time
 import wandb
 import numpy as np
 import tensorflow as tf
@@ -46,6 +47,7 @@ class DQNRunner:
             """Train the DRL agent over multiple episodes."""
             for episode in range(self.args.num_episodes):
                 if episode == 0:
+                    time.sleep(0.1)
                     state = self.env.reset()  # receive ns3_ready
 
                 episode_reward = 0
