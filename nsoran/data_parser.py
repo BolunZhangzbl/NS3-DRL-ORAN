@@ -47,7 +47,11 @@ class DataParser:
         try:
             with open(file_path, 'r') as f:
                 latest_time_str = f.readlines()[-1].strip().split()[0]  # Extract the first value of the last line
-                latest_time_ms = int(float(latest_time_str) * 1000) if '.' in latest_time_str else int(latest_time_str)
+                latest_time_float = float(latest_time_str)
+                if '.' in latest_time_str or latest_time_float<10:
+                    latest_time_ms = int(latest_time_float * 1000)
+                else:
+                    latest_time_ms = int(latest_time_str)
                 return latest_time_ms
         except Exception as e:
             print(f"Error reading latest time for {kpm_type}: {e}")

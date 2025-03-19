@@ -26,7 +26,7 @@ for kpm_type in dict_kpms.keys():
     file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), filename))
     try:
         with open(file_path, 'r') as f:
-            latest_time_str = f.readlines()[-1].strip().split()[0]  # Extract the first value of the last line
+            latest_time_str = f.readlines()[3893].strip().split()[0]  # Extract the first value of the last line
             latest_time_ms = int(float(latest_time_str) * 1000) if '.' in latest_time_str else int(latest_time_str)
         print(f"\nlatest_time_str: {latest_time_str}, {type(latest_time_str)}")
         print(f"latest_time_ms: {latest_time_ms}, {type(latest_time_ms)}")
@@ -37,7 +37,7 @@ for kpm_type in dict_kpms.keys():
     columns = dict_columns.get(kpm_type)
     usecols = ['time', 'cellId'] + dict_kpms.get(kpm_type)
     df = pd.read_csv(file_path, sep='\s+', comment='%', index_col=False, names=columns, skiprows=1, usecols=usecols)
-    print(df['time'][0], df['time'].dtype == 'float')
+    # print(df['time'][0], df['time'].dtype == 'float')
 
     if df['time'].dtype == 'float':
         df['time'] *= 1000
