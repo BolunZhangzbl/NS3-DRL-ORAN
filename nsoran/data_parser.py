@@ -72,7 +72,8 @@ class DataParser:
         # Process KPM-specific logic (groupby, rename, etc.)
         if kpm_type == 'tp':
             df = df.groupby('cellId', as_index=False).mean()
-            df['tp'] = df['size'] / 8
+            df['size'] = df['size'] / 8
+            df = df.rename(columns={'size': 'tp'})
         elif kpm_type == 'sinr':
             df = df.groupby('cellId', as_index=False).mean()
         elif kpm_type == 'prb':
