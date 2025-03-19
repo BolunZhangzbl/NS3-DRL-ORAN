@@ -100,7 +100,8 @@ class DataParser:
         df_aggregated = self.fill_missing_cellid(df_aggregated)  # Your existing method
 
         # Step 4: Update last_read_time AFTER processing all files
-        self.last_read_time = end_time
+        if end_time > self.last_read_time:
+            self.last_read_time = end_time
 
         return df_aggregated
 
@@ -117,10 +118,18 @@ class DataParser:
 
     def fill_missing_cellid(self, df):
         """Ensure all cellIds are present, filling missing values with 0."""
-        expected_cellIds = range(1, self.num_enb + 1)
-        for cell_id in expected_cellIds:
-            if cell_id not in df['cellId'].values:
-                df = df.append({'cellId': cell_id, 'tp': 0, 'sinr': 0, 'prb': 0}, ignore_index=True)
+        expected_cellIds = pd.Series(range(1, self.num_enb + 1), name='cellId')
+
+        # Create a DataFrame with all expected cellIds
+        full_df = pd.DataFrame({'cellId': expected_cellIds})
+
+        # Merge with existing data (acts like a right join)
+        df = full_df.merge(df, on='cellId', how='left')
+
+        # Fill missing values with 0 for numerical columns
+        numerical_cols = ['tp', 'sinr', 'prb']
+        df[numerical_cols] = df[numerical_cols].fillna(0)
+
         return df.sort_values('cellId')
 
 
