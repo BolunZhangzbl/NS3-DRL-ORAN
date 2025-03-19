@@ -62,7 +62,7 @@ class DataParser:
         file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", filename))
 
         try:
-            df = pd.read_csv(file_path, sep='\s+', comment='%', names=columns, skiprows=1, usecols=usecols)
+            df = pd.read_csv(file_path, sep='\s+', comment='%', index_col=False, names=columns, skiprows=1, usecols=usecols)
             df = self.convert_time_to_ms(df)  # Your existing time conversion
             df = df[(df['time'] >= start_time) & (df['time'] <= end_time)]
         except Exception as e:
