@@ -29,6 +29,7 @@ try:
         lines = f.readlines()
         last_line = lines[-1].strip().split()
         print(f"last_line: {last_line}")
+        print(f"time: {last_line[0]}, {type(last_line[0])}")
 except Exception as e:
     print(e)
 
@@ -41,4 +42,4 @@ print(df['time'][0], df['time'].dtype == 'float')
 if df['time'].dtype == 'float':
     df['time'] *= 1000
     df['time'] = df['time'].astype(int)
-print(df[-30:])
+# print(df[-30:])

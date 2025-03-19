@@ -39,7 +39,6 @@ class DataParser:
         self.it_period = args.it_period
         self.num_enb = args.num_enb
 
-
     def get_latest_time(self, kpm_type):
         """Get the latest timestamp for a KPM file"""
         filename = dict_filenames.get(kpm_type)
@@ -47,9 +46,10 @@ class DataParser:
 
         try:
             with open(file_path, 'r') as f:
-                lines = f.readlines()
-                last_line = lines[-1].strip().split()
-                return float(last_line[0])  # Assuming time is the first column
+                last_line = f.readlines()[-1].strip().split()[0]
+                latest_time_ms = int(float(last_line) * 1000) if '.' in last_line and float(last_line) < 10 else int(
+                    last_line)
+                return latest_time_ms
         except Exception as e:
             print(f"Error reading latest time for {kpm_type}: {e}")
             return self.last_read_time

@@ -74,7 +74,6 @@ class ORANSimEnv(gym.Env):
 
     def _get_obs(self, action=None):
         df_state = self.data_parser.aggregate_kpms()
-        print(f"df_state: {df_state}")
         self.latest_time = self.data_parser.last_read_time
 
         # Add Tx power from ORAN scenario
@@ -85,6 +84,7 @@ class ORANSimEnv(gym.Env):
             data_tx_power = [44] * self.num_enb
         df_state['tx_power'] = data_tx_power[:len(df_state)]
         df_state = df_state.drop(columns=['cellId'], errors='ignore')
+        print(f"df_state: {df_state}")
 
         data_state = df_state.to_numpy().flatten()
 
