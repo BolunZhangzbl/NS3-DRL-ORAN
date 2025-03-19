@@ -114,7 +114,7 @@ class DataParser:
         Convert time column to milliseconds if it is in seconds.
         """
         # Calculate the range of the time column
-        if df['time'].dtype=='float' and df['time'].max()<10:
+        if df['time'].max()<10:
             df['time'] *= 1000
             df['time'] = df['time'].astype(int)
         return df
