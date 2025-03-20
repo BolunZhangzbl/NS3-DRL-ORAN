@@ -407,14 +407,46 @@ void NetworkScenario::create_lte_network()
 
 void NetworkScenario::apply_network_conf()
 {
-    // Set base station transmission powers according to chosen values
+    std::cout << "Applying network configuration..." << std::endl;
+
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        std::ostringstream oss;
-        oss << "/NodeList/" << this->enb_nodes.Get(i)->GetId();
-        oss << "/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/TxPower";
-        Config::Set(oss.str(), DoubleValue(0.1 * this->enb_power[i]));
+        Ptr<Node> enbNode = this->enb_nodes.Get(i);
+
+        // Iterate over all devices on the node and find LteEnbNetDevice
+        Ptr<LteEnbNetDevice> enbDevice = nullptr;
+        for (uint32_t j = 0; j < enbNode->GetNDevices(); j++) {
+            Ptr<NetDevice> dev = enbNode->GetDevice(j);
+            if ((enbDevice = dev->GetObject<LteEnbNetDevice>())) {
+                break;  // Stop searching once found
+            }
+        }
+
+        if (enbDevice) {
+            Ptr<LteEnbPhy> enbPhy = enbDevice->GetPhy();
+            if (enbPhy) {
+                enbPhy->SetTxPower(0.3 * this->enb_power[i]); // Set transmission power
+                double confirmedTxPower = enbPhy->GetTxPower();
+                std::cout << "eNB " << i << " TxPower set to: " << confirmedTxPower << " dBm" << std::endl;
+            } else {
+                std::cout << " Warning: LteEnbPhy not found for eNB " << i << std::endl;
+            }
+        } else {
+            std::cerr << "ERROR: LteEnbNetDevice NOT FOUND for eNB " << i << "!" << std::endl;
+        }
     }
 }
+
+
+//void NetworkScenario::apply_network_conf()
+//{
+//    // Set base station transmission powers according to chosen values
+//    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+//        std::ostringstream oss;
+//        oss << "/NodeList/" << this->enb_nodes.Get(i)->GetId();
+//        oss << "/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/TxPower";
+//        Config::Set(oss.str(), DoubleValue(0.1 * this->enb_power[i]));
+//    }
+//}
 
 void NetworkScenario::create_remote_server()
 {

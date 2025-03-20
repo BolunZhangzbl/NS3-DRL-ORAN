@@ -49,7 +49,6 @@ class DQNRunner:
             for episode in range(self.args.num_episodes):
                 if episode == 0:
                     state = self.env.reset()  # receive ns3_ready
-                    print(f"init state: {state}")
 
                 episode_reward = 0
                 episode_loss = 0
