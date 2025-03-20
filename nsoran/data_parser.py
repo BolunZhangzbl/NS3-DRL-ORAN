@@ -75,7 +75,7 @@ class DataParser:
         if kpm_type == 'tp':
             df['mcs'] = df['mcs'].astype(int)
             df['mcs_bits'] = df['mcs'].apply(map_mcs_bits)
-            df['cr'] = df['mcs'].apply(mcs_to_cr)
+            df['cr'] = df['mcs'].apply(mcs_to_cr_func)
             df['prbs'] = (df['size'] * 8) / (df['mcs_bits'] * 84 * df['cr'])
             df['tp'] = df['size'] * 8
             df = df.drop(columns=['mcs', 'mcs_bits', 'cr', 'size'], errors='ignore')
