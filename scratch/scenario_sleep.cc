@@ -422,40 +422,40 @@ void NetworkScenario::create_lte_network()
     this->lte_helper->SetFfrAlgorithmType("ns3::LteFrHardAlgorithm");
 
     // Install eNB devices and attach them to nodes
-//    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-//        Ptr<Node> node = this->enb_nodes.Get(i);
-//        NetDeviceContainer enbDev = this->lte_helper->InstallEnbDevice(node);
-//
-//        this->lte_helper->SetFfrAlgorithmAttribute("FrCellTypeId", UintegerValue((i % 3) + 1));
-//
-//        // Ensure devices were installed
-//        if (enbDev.GetN() == 0) {
-//            std::cerr << "Error: LteEnbNetDevice installation failed for eNB " << i << std::endl;
-//        } else {
-//            std::cout << "Success: LteEnbNetDevice installed on eNB " << i << std::endl;
-//        }
-//
-//        // Additional validation
-//        Ptr<LteEnbNetDevice> enbDevice = DynamicCast<LteEnbNetDevice>(enbDev.Get(0));
-//        if (!enbDevice) {
-//            std::cerr << "Error: DynamicCast to LteEnbNetDevice failed for eNB " << i << std::endl;
-//        } else {
-//            std::cout << "Success: LteEnbNetDevice correctly casted for eNB " << i << std::endl;
-//        }
-//    }
+    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+        Ptr<Node> node = this->enb_nodes.Get(i);
+        NetDeviceContainer enbDev = this->lte_helper->InstallEnbDevice(node);
 
-    // Install eNB devices
-    NetDeviceContainer enbDevs = this->lte_helper->InstallEnbDevice(this->enb_nodes);
+        this->lte_helper->SetFfrAlgorithmAttribute("FrCellTypeId", UintegerValue((i % 3) + 1));
 
-    // Debugging: Check if devices were actually installed
-    for (uint32_t i = 0; i < enbDevs.GetN(); i++) {
-        Ptr<LteEnbNetDevice> enbDevice = enbDevs.Get(i)->GetObject<LteEnbNetDevice>();
-        if (enbDevice) {
-            std::cout << "eNB " << i << " successfully installed LteEnbNetDevice." << std::endl;
+        // Ensure devices were installed
+        if (enbDev.GetN() == 0) {
+            std::cerr << "Error: LteEnbNetDevice installation failed for eNB " << i << std::endl;
         } else {
-            std::cerr << "ERROR: eNB " << i << " failed to install LteEnbNetDevice!" << std::endl;
+            std::cout << "Success: LteEnbNetDevice installed on eNB " << i << std::endl;
+        }
+
+        // Additional validation
+        Ptr<LteEnbNetDevice> enbDevice = DynamicCast<LteEnbNetDevice>(enbDev.Get(0));
+        if (!enbDevice) {
+            std::cerr << "Error: DynamicCast to LteEnbNetDevice failed for eNB " << i << std::endl;
+        } else {
+            std::cout << "Success: LteEnbNetDevice correctly casted for eNB " << i << std::endl;
         }
     }
+
+    // Install eNB devices
+//    NetDeviceContainer enbDevs = this->lte_helper->InstallEnbDevice(this->enb_nodes);
+//
+//    // Debugging: Check if devices were actually installed
+//    for (uint32_t i = 0; i < enbDevs.GetN(); i++) {
+//        Ptr<LteEnbNetDevice> enbDevice = enbDevs.Get(i)->GetObject<LteEnbNetDevice>();
+//        if (enbDevice) {
+//            std::cout << "eNB " << i << " successfully installed LteEnbNetDevice." << std::endl;
+//        } else {
+//            std::cerr << "ERROR: eNB " << i << " failed to install LteEnbNetDevice!" << std::endl;
+//        }
+//    }
 
     // Add X2 interface between eNBs to enable handovers
     this->lte_helper->AddX2Interface(this->enb_nodes);
