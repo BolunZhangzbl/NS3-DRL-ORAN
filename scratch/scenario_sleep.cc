@@ -401,14 +401,34 @@ void NetworkScenario::create_lte_network()
 
 void NetworkScenario::apply_network_conf()
 {
-    // Set base station transmission powers according to chosen values
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        std::ostringstream oss;
-        oss << "/NodeList/" << this->enb_nodes.Get(i)->GetId();
-        oss << "/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/TxPower";
-        Config::Set(oss.str(), DoubleValue(0.2 * this->enb_power[i]));
+        Ptr<LteEnbNetDevice> enbDevice = this->enb_nodes.Get(i)->GetObject<LteEnbNetDevice>();
+        if (enbDevice) {
+            Ptr<LteEnbPhy> enbPhy = enbDevice->GetPhy();
+            if (enbPhy) {
+                enbPhy->SetTxPower(0.2 * this->enb_power[i]); // Set transmission power
+
+                double confirmedTxPower = enbPhy->GetTxPower();
+                std::cout << "eNB " << i << " TxPower set to: " << confirmedTxPower << " dBm" << std::endl;
+            } else {
+                NS_LOG_WARN("LteEnbPhy not found for eNB node " << i);
+            }
+        } else {
+            NS_LOG_WARN("LteEnbNetDevice not found for eNB node " << i);
+        }
     }
 }
+
+//void NetworkScenario::apply_network_conf()
+//{
+//    // Set base station transmission powers according to chosen values
+//    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+//        std::ostringstream oss;
+//        oss << "/NodeList/" << this->enb_nodes.Get(i)->GetId();
+//        oss << "/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/TxPower";
+//        Config::Set(oss.str(), DoubleValue(0.2 * this->enb_power[i]));
+//    }
+//}
 
 void NetworkScenario::create_remote_server()
 {
