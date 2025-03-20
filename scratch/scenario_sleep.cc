@@ -291,7 +291,7 @@ void NetworkScenario::periodically_interact_with_agent()
 
         try {
             // Read action from JSON file
-            std:cout << "Read action from JSON file" <<std:endl;
+            std::cout << "Read action from JSON file" <<std::endl;
             std::ifstream action_file("actions.json");
             if (!action_file.is_open()) {
                 std::cerr << "Error: Could not open actions.json for reading" << std::endl;
@@ -308,7 +308,7 @@ void NetworkScenario::periodically_interact_with_agent()
             }
 
             // Parse the action vector
-            std:cout << "Parse the action vector" <<std:endl;
+            std::cout << "Parse the action vector" <<std::endl;
             std::vector<int> action_vector;
             for (auto& action : action_json["actions"]) {
                 int action_value = action.get<int>();
