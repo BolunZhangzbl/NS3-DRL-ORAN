@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 # -- Private Imports
-from utils import *
+from nsoran.utils import *
 
 # -- Global Variables
 
