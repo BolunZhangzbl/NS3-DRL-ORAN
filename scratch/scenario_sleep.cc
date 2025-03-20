@@ -501,40 +501,103 @@ void NetworkScenario::create_remote_server()
 
 void NetworkScenario::create_ue_applications()
 {
-    // Add a default IP stack to the UEs. The EPC helper will later
-    // assign addresses to UEs in the 7.0.0.0/8 subnet by default
+    std::cout << "Installing Internet stack on UEs..." << std::endl;
     InternetStackHelper ip_stack_helper;
     ip_stack_helper.Install(this->ue_nodes);
 
-    // Create UE net devices and assign IP addresses in EPC
+    std::cout << "Installing LTE devices on UEs..." << std::endl;
     NetDeviceContainer ue_devices = this->lte_helper->InstallUeDevice(this->ue_nodes);
+
+    std::cout << "Assigning IP addresses to UEs..." << std::endl;
     Ipv4InterfaceContainer ue_ifaces = this->epc_helper->AssignUeIpv4Address(ue_devices);
 
-    // Attach the UEs to the LTE network
-    this->lte_helper->Attach(ue_devices);
-
-    // Set default IP route for all UEs
-    Ipv4StaticRoutingHelper routing_helper;
-    for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
-        routing_helper.GetStaticRouting(this->ue_nodes.Get(i)->GetObject<Ipv4>())
-            ->SetDefaultRoute(this->epc_helper->GetUeDefaultGatewayAddress(), 1);
+    // Verify IPs assigned
+    for (uint32_t i = 0; i < ue_nodes.GetN(); i++) {
+        std::cout << "UE " << i << " IP Address: " << ue_ifaces.GetAddress(i) << std::endl;
     }
 
-    // Set up CBR (constant bitrate) traffic generators from the server to each UE
+    // Attach each UE to the closest eNB
+    std::cout << "Attaching UEs to eNBs..." << std::endl;
     for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
-        const char *socket_factory_type = "ns3::TcpSocketFactory";
+        Ptr<LteUeNetDevice> ueDevice = ue_devices.Get(i)->GetObject<LteUeNetDevice>();
+        Ptr<LteEnbNetDevice> enbDevice = this->enb_nodes.Get(i % this->enb_nodes.GetN())->GetDevice(0)->GetObject<LteEnbNetDevice>();
+        this->lte_helper->Attach(ueDevice, enbDevice);
+
+        // Debug attachment
+        if (ueDevice->GetRrc()->GetState() == LteUeRrc::CONNECTED_NORMALLY) {
+            std::cout << "UE " << i << " attached successfully to eNB " << enbDevice->GetCellId() << std::endl;
+        } else {
+            std::cout << "ERROR: UE " << i << " NOT attached!" << std::endl;
+        }
+    }
+
+    // Set default IP route for all UEs
+    std::cout << "Setting default routes for UEs..." << std::endl;
+    Ipv4StaticRoutingHelper routing_helper;
+    for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
+        Ptr<Ipv4StaticRouting> ueRouting = routing_helper.GetStaticRouting(this->ue_nodes.Get(i)->GetObject<Ipv4>());
+        ueRouting->SetDefaultRoute(this->epc_helper->GetUeDefaultGatewayAddress(), 1);
+    }
+
+    // Set up traffic generator from server to each UE
+    std::cout << "Setting up traffic generator..." << std::endl;
+    const char *socket_factory_type = "ns3::UdpSocketFactory";  // Use UDP for simplicity
+    for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
         InetSocketAddress cbr_dest(ue_ifaces.GetAddress(i), 10000);
         OnOffHelper cbr_helper(socket_factory_type, cbr_dest);
         cbr_helper.SetConstantRate(DataRate("20Mbps"));
         ApplicationContainer cbr_apps = cbr_helper.Install(this->server_nodes.Get(0));
         cbr_apps.Start(Seconds(1));
+        cbr_apps.Stop(Seconds(10)); // Ensure stop time is set
 
-        // Set up a TCP/UDP sink on the receiving side (UE)
+        // Set up a sink on the receiving UE
         PacketSinkHelper packet_sink_helper(socket_factory_type, cbr_dest);
         ApplicationContainer sink_apps = packet_sink_helper.Install(this->ue_nodes.Get(i));
         sink_apps.Start(Seconds(0));
+
+        std::cout << "Traffic generator set up for UE " << i << " at " << ue_ifaces.GetAddress(i) << std::endl;
     }
+
+    std::cout << "UE applications created successfully!" << std::endl;
 }
+
+
+//void NetworkScenario::create_ue_applications()
+//{
+//    // Add a default IP stack to the UEs. The EPC helper will later
+//    // assign addresses to UEs in the 7.0.0.0/8 subnet by default
+//    InternetStackHelper ip_stack_helper;
+//    ip_stack_helper.Install(this->ue_nodes);
+//
+//    // Create UE net devices and assign IP addresses in EPC
+//    NetDeviceContainer ue_devices = this->lte_helper->InstallUeDevice(this->ue_nodes);
+//    Ipv4InterfaceContainer ue_ifaces = this->epc_helper->AssignUeIpv4Address(ue_devices);
+//
+//    // Attach the UEs to the LTE network
+//    this->lte_helper->Attach(ue_devices);
+//
+//    // Set default IP route for all UEs
+//    Ipv4StaticRoutingHelper routing_helper;
+//    for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
+//        routing_helper.GetStaticRouting(this->ue_nodes.Get(i)->GetObject<Ipv4>())
+//            ->SetDefaultRoute(this->epc_helper->GetUeDefaultGatewayAddress(), 1);
+//    }
+//
+//    // Set up CBR (constant bitrate) traffic generators from the server to each UE
+//    for (uint32_t i = 0; i < this->ue_nodes.GetN(); i++) {
+//        const char *socket_factory_type = "ns3::TcpSocketFactory";
+//        InetSocketAddress cbr_dest(ue_ifaces.GetAddress(i), 10000);
+//        OnOffHelper cbr_helper(socket_factory_type, cbr_dest);
+//        cbr_helper.SetConstantRate(DataRate("20Mbps"));
+//        ApplicationContainer cbr_apps = cbr_helper.Install(this->server_nodes.Get(0));
+//        cbr_apps.Start(Seconds(1));
+//
+//        // Set up a TCP/UDP sink on the receiving side (UE)
+//        PacketSinkHelper packet_sink_helper(socket_factory_type, cbr_dest);
+//        ApplicationContainer sink_apps = packet_sink_helper.Install(this->ue_nodes.Get(i));
+//        sink_apps.Start(Seconds(0));
+//    }
+//}
 
  void NetworkScenario::printStats(FlowMonitorHelper &flowmon_helper, bool perFlowInfo)
 {
