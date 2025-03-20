@@ -328,9 +328,7 @@ void NetworkScenario::periodically_interact_with_agent()
                 this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
             }
 
-            std::cerr << "Applying network configuration..." << std::endl;
             this->apply_network_conf();
-            std::cerr << "Network configuration applied successfully." << std::endl;
 
         } catch (const std::exception& e) {
             std::cerr << "Exception while reading actions.json: " << e.what() << std::endl;
@@ -401,20 +399,23 @@ void NetworkScenario::create_lte_network()
 
 void NetworkScenario::apply_network_conf()
 {
+    std::cout << "Applying network configuration..." << std::endl;  // ✅ Debug print
+
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+        std::cout << "Processing eNB node " << i << std::endl;  // ✅ Debug each node
+
         Ptr<LteEnbNetDevice> enbDevice = this->enb_nodes.Get(i)->GetObject<LteEnbNetDevice>();
         if (enbDevice) {
             Ptr<LteEnbPhy> enbPhy = enbDevice->GetPhy();
             if (enbPhy) {
-                enbPhy->SetTxPower(0.2 * this->enb_power[i]); // Set transmission power
-
+                enbPhy->SetTxPower(this->enb_power[i]); // Set transmission power
                 double confirmedTxPower = enbPhy->GetTxPower();
                 std::cout << "eNB " << i << " TxPower set to: " << confirmedTxPower << " dBm" << std::endl;
             } else {
-                NS_LOG_WARN("LteEnbPhy not found for eNB node " << i);
+                std::cout << "Warning: LteEnbPhy not found for eNB " << i << std::endl;
             }
         } else {
-            NS_LOG_WARN("LteEnbNetDevice not found for eNB node " << i);
+            std::cout << "Warning: LteEnbNetDevice not found for eNB " << i << std::endl;
         }
     }
 }
