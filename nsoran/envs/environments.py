@@ -125,6 +125,9 @@ class ORANSimEnv(gym.Env):
         if isinstance(action, np.ndarray):
             action = action.tolist()
 
+        # Ensure all elems are standard py int
+        action = [int(a) for a in action]
+
         action_data = {'actions': action}  # Converting the action to a list for JSON storage
 
         try:
