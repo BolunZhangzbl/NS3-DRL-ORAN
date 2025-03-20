@@ -450,7 +450,7 @@ void NetworkScenario::apply_network_conf()
         if (enbDevice) {
             Ptr<LteEnbPhy> enbPhy = enbDevice->GetPhy();
             if (enbPhy) {
-                enbPhy->SetTxPower(this->enb_power[i]); // Set transmission power
+                enbPhy->SetTxPower(0.3 * this->enb_power[i]); // Set transmission power
                 double confirmedTxPower = enbPhy->GetTxPower();
                 std::cout << "eNB " << i << " TxPower set to: " << confirmedTxPower << " dBm" << std::endl;
             } else {
@@ -601,7 +601,7 @@ static ns3::GlobalValue g_sim_time("sim_time", "Simulation Time in s",
                                    ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecker for int
 
 static ns3::GlobalValue g_active_power("active_power", "Power values for active status",
-                                       ns3::IntegerValue(36), // Use IntegerValue for int
+                                       ns3::IntegerValue(44), // Use IntegerValue for int
                                        ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecke
 
 int main(int argc, char *argv[])
