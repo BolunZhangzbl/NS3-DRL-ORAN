@@ -601,7 +601,7 @@ static ns3::GlobalValue g_sim_time("sim_time", "Simulation Time in s",
                                    ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecker for int
 
 static ns3::GlobalValue g_active_power("active_power", "Power values for active status",
-                                       ns3::IntegerValue(44), // Use IntegerValue for int
+                                       ns3::IntegerValue(36), // Use IntegerValue for int
                                        ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecke
 
 int main(int argc, char *argv[])
