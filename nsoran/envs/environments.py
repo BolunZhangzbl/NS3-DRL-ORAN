@@ -31,7 +31,7 @@ class ORANSimEnv(gym.Env):
 
         # reward
         self.curr_tds = [0] * self.num_enb                 # Calculate activate cost
-        self.reward_weights = [0.2, 0.2, 0.2, -0.2, -0.2]  # tp, prbs, sinr, tx_power, activate_cost
+        self.reward_weights = [0.2, 0.2, 0.2, -0.2, -0.2]  # prbs, tp, sinr, tx_power, activate_cost
         self.reward_threshold = int(1e6)
 
         # JSON file paths for communication
@@ -59,7 +59,7 @@ class ORANSimEnv(gym.Env):
         print("Waiting for ns3_ready")
         self.ns3_ready.acquire()  # Block until NS-3 signals it's ready
         next_state = self._get_obs(action)  # Wait for NS-3 update, then get new state
-        reward = self._get_reward(next_state)
+        reward = self._get_reward(next_state, action)
         self.done = self._get_done(reward)
 
         return next_state, reward, self.done
@@ -94,9 +94,12 @@ class ORANSimEnv(gym.Env):
 
         return data_state
 
-    def _get_reward(self, data_state):
+    def _get_reward(self, data_state, action):
         data_reward = data_state.reshape(4, self.num_state)
         reward = np.dot(data_reward, self.reward_weights).sum()
+
+        # Minus the number of active enbs
+        reward -= self.reward_weights[1] * sum(action)
 
         return reward
 
