@@ -62,11 +62,22 @@ class DQNRunner:
                     # Store step reward
                     self.step_rewards.append(reward)
 
+                    original_weights = self.agent.model.get_weights()
+
                     # Record experience & train agent
                     self.agent.record((state, action_idx, reward, next_state))
                     loss_tensor = self.agent.update()
                     loss = loss_tensor.numpy() if isinstance(loss_tensor, tf.Tensor) else loss_tensor
                     self.step_losses.append(loss)
+
+                    new_weights = self.agent.model.get_weights()
+
+                    weights_changed = any(
+                        not np.allclose(w1, w2) for w1, w2 in zip(original_weights, new_weights)
+                    )
+
+                    if weights_changed:
+                        print("\nDQN Update Successfully!!!!!!\n")
 
                     # Update target model periodically
                     self.agent.update_target()
