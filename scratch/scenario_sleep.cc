@@ -467,34 +467,29 @@ void NetworkScenario::apply_network_conf()
 
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
         std::cout << "Processing eNB node " << i << std::endl;
-
         Ptr<Node> enbNode = this->enb_nodes.Get(i);
 
-        std::cout << "  - eNB " << i << " has " << enbNode->GetNDevices() << " devices installed." << std::endl;
-
-        // Loop through all devices and print them
+        // Iterate over all devices on the node and find LteEnbNetDevice
+        Ptr<LteEnbNetDevice> enbDevice = nullptr;
         for (uint32_t j = 0; j < enbNode->GetNDevices(); j++) {
             Ptr<NetDevice> dev = enbNode->GetDevice(j);
-            if (DynamicCast<LteEnbNetDevice>(dev)) {
-                std::cout << "Device " << j << " is LteEnbNetDevice!" << std::endl;
-            } else {
-                std::cout << "Device " << j << " is NOT LteEnbNetDevice! (Type: " << dev->GetInstanceTypeId() << ")" << std::endl;
+            if ((enbDevice = dev->GetObject<LteEnbNetDevice>())) {
+                std::cout << "Found LteEnbNetDevice on eNB " << i << " (Device " << j << ")" << std::endl;
+                break;  // Stop searching once found
             }
         }
 
-        // Now try to get the device
-        Ptr<LteEnbNetDevice> enbDevice = enbNode->GetObject<LteEnbNetDevice>();
-        if (!enbDevice) {
-            std::cerr << "ERROR: LteEnbNetDevice NOT FOUND for eNB " << i << "!" << std::endl;
-        } else {
-            std::cout << "SUCCESS: Found LteEnbNetDevice for eNB " << i << std::endl;
+        if (enbDevice) {
             Ptr<LteEnbPhy> enbPhy = enbDevice->GetPhy();
             if (enbPhy) {
-                enbPhy->SetTxPower(this->enb_power[i]);
-                std::cout << "  - TxPower set to: " << enbPhy->GetTxPower() << " dBm" << std::endl;
+                enbPhy->SetTxPower(this->enb_power[i]); // Set transmission power
+                double confirmedTxPower = enbPhy->GetTxPower();
+                std::cout << "eNB " << i << " TxPower set to: " << confirmedTxPower << " dBm" << std::endl;
             } else {
-                std::cerr << "ERROR: LteEnbPhy not found for eNB " << i << std::endl;
+                std::cout << " Warning: LteEnbPhy not found for eNB " << i << std::endl;
             }
+        } else {
+            std::cerr << "ERROR: LteEnbNetDevice NOT FOUND for eNB " << i << "!" << std::endl;
         }
     }
 }
