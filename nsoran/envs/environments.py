@@ -20,7 +20,6 @@ logging.basicConfig(level=logging.INFO)
 class ORANSimEnv(gym.Env):
 
     def __init__(self, args):
-        self.active_power = args.active_power
         self.num_enb = args.num_enb
         self.num_state = args.num_state
         self.latest_time = 0
@@ -31,7 +30,7 @@ class ORANSimEnv(gym.Env):
 
         # reward
         self.curr_tds = [0] * self.num_enb                 # Calculate activate cost
-        self.reward_weights = [0.2, 0.2, 0.2, -0.2, -0.2]  # prbs, tp, sinr, tx_power, activate_cost
+        self.reward_weights = [0.1, 0.001, 0.1, -1, -1]  # prbs, tp, sinr, tx_power, activate_cost
         self.reward_threshold = int(1e6)
 
         # JSON file paths for communication
@@ -80,7 +79,7 @@ class ORANSimEnv(gym.Env):
 
         # Add Tx power from ORAN scenario
         # data_tx_power = self._read_tx_power_json()
-        action = [self.active_power if val else 0 for val in action] if action is not None else [self.active_power] * self.num_enb
+        action = [action_idx_to_power.get(val) if val else 0 for val in action]
         df_state['tx_power'] = action
 
         # Add activate cost to state

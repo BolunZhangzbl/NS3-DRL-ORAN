@@ -1,10 +1,13 @@
 # -- Public Imports
 import os
+import math
 import numpy as np
 
 # -- Private Imports
 
 # -- Global Variables
+
+action_idx_to_power = {0: 0, 1: 30, 2: 37, 3:44}
 
 mcs_to_cr = {
     0:  0.094,  1:  0.122,  2:  0.154,  3:  0.192,  4:  0.242,
@@ -66,6 +69,30 @@ class ActionMapper:
 
         # Convert the binary string to a list of boolean values
         return [int(bit) for bit in binary_str]
+
+    def idx_to_4base_action(self, idx):
+        if idx < self.minVal or idx > self.maxVal:
+            raise ValueError(f"Action index {idx} is out of range [{self.minVal}, {self.maxVal}]")
+
+        num_digits = int(math.log(self.maxVal - self.minVal + 1, 4))
+
+        return int_to_base4_list(idx, num_digits)
+
+
+def int_to_base4_list(n, num_digits=4):
+    if n == 0:
+        return [0] * num_digits  # Ensure fixed length
+
+    base4_list = []
+    while n > 0:
+        base4_list.append(n % 4)  # Get remainder (0, 1, 2, or 3)
+        n //= 4  # Integer division by 4
+
+    # Reverse to get correct order and pad with leading zeros
+    base4_list = base4_list[::-1]
+
+    # Ensure it's exactly `num_digits` long by padding at the front
+    return [0] * (num_digits - len(base4_list)) + base4_list
 
 
 def save_lists(file_path, ep_rewards, step_rewards, avg_rewards,

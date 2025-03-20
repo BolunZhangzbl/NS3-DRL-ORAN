@@ -64,6 +64,6 @@ def get_parser():
     parser.add_argument('--batch_size', type=int, default=256, help='Batch size for training')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--num_state', type=int, default=5, help='Number of states for each cell')
-    parser.add_argument('--num_action', type=int, default=2, help='Number of actions for each cell')
+    parser.add_argument('--num_action', type=int, default=4, help='Number of actions for each cell')
 
     return parser

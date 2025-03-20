@@ -103,7 +103,7 @@ class BaseAgentDQN:
             q_vals_dist = self.model.predict(state, verbose=0)[0]
             action_idx = tf.argmax(q_vals_dist).numpy()
 
-        action = self.action_mapper.idx_to_bool_action(action_idx)
+        action = self.action_mapper.idx_to_4base_action(action_idx)
         return action, action_idx
 
     def sample(self):
