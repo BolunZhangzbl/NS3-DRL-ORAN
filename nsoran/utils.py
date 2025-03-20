@@ -18,6 +18,10 @@ mcs_to_cr = {
 # -- Functions
 
 
+def mcs_to_cr_func(mcs):
+    return mcs_to_cr.get(mcs, 0.5)
+
+
 def map_mcs_bits(mcs):
     if mcs<=9:
         return 2

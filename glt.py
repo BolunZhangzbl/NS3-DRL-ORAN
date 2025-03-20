@@ -29,7 +29,7 @@ class Args:
 args = Args()
 dp = DataParser(args)
 
-kpm_type = 'sinr'
+kpm_type = 'tp'
 columns = dict_columns.get(kpm_type)
 usecols = ['time', 'cellId'] + dict_kpms.get(kpm_type)
 filename = dict_filenames.get(kpm_type)
@@ -41,7 +41,7 @@ if df['time'].dtype == 'float':
     df['time'] = df['time'].astype(int)
 # df = df[(df['time'] >= start_time) & (df['time'] <= end_time)]
 print(df.tail())
-print(df['sinr'].min())
+print(df['mcs'].unique())
 
 # kpm_type = 'sinr'
 # for kpm_type in dict_kpms.keys():
