@@ -18,6 +18,11 @@ def run_scenario(args):
     """
     Run the ns-3 simulation (scenario_sleep.cc) with the given parameters.
     This will block execution until NS-3 completes.
+
+    Args:
+        args: Command-line arguments for the simulation.
+        stream_ns3 (bool): If True, stream NS-3 output to the console in real-time.
+                             If False, suppress NS-3 output.
     """
     command = [
         "./waf", "--run",
@@ -25,27 +30,29 @@ def run_scenario(args):
         f"--it_period={args.it_period} --sim_time={args.sim_time}"
     ]
     print(f"Running simulation: {' '.join(command)}")
-
-    # Run NS-3 in a separate process and stream output in real-time
+    
+    stream_ns3 = args.stream_ns3
+    # Run NS-3 in a separate process
     process = subprocess.Popen(
         command,
-        stdout=subprocess.PIPE,  # Capture stdout
-        stderr=subprocess.PIPE,  # Capture stderr
+        stdout=subprocess.PIPE if stream_ns3 else subprocess.DEVNULL,  # Capture stdout or suppress it
+        stderr=subprocess.PIPE if stream_ns3 else subprocess.DEVNULL,  # Capture stderr or suppress it
         universal_newlines=True  # Ensure output is treated as text
     )
 
-    # Stream stdout and stderr to the console in real-time
-    def stream_output(pipe, pipe_name):
-        for line in pipe:
-            print(f"[NS-3 {pipe_name}] {line}", end='')
+    if stream_ns3:
+        # Stream stdout and stderr to the console in real-time
+        def stream_pipe(pipe, pipe_name):
+            for line in pipe:
+                print(f"[NS-3 {pipe_name}] {line}", end='')
 
-    # Create threads to stream stdout and stderr
-    stdout_thread = threading.Thread(target=stream_output, args=(process.stdout, "stdout"))
-    stderr_thread = threading.Thread(target=stream_output, args=(process.stderr, "stderr"))
+        # Create threads to stream stdout and stderr
+        stdout_thread = threading.Thread(target=stream_pipe, args=(process.stdout, "stdout"))
+        stderr_thread = threading.Thread(target=stream_pipe, args=(process.stderr, "stderr"))
 
-    # Start the threads
-    stdout_thread.start()
-    stderr_thread.start()
+        # Start the threads
+        stdout_thread.start()
+        stderr_thread.start()
 
     return process
 
@@ -88,13 +95,14 @@ def main():
     try:
         # Step 1: Start NS-3 simulation
         ns3_process = run_scenario(args)
+        time.sleep(0.1)
 
-        run_drl(args)
+        # run_drl(args)
 
         # Step 2: Wait for NS-3 to start
-        if ns3_process.poll() is not None:
-            print("Error: NS-3 simulation exited too early!")
-            exit(1)
+        # if ns3_process.poll() is not None:
+        #     print("Error: NS-3 simulation exited too early!")
+        #     exit(1)
 
         # Step 3: Start the DRL agent in a separate thread
         drl_thread = threading.Thread(target=run_drl, args=(args,))
@@ -105,8 +113,10 @@ def main():
 
         # Step 5: Wait for NS-3 process to complete
         stdout, stderr = ns3_process.communicate()
-        print(stdout.decode())
-        print(stderr.decode())
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(stderr)
         print("NS-3 simulation has completed.")
 
     except Exception as e:

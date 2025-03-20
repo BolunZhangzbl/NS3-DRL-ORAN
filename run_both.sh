@@ -3,22 +3,30 @@
 # Environment and script configuration
 script="run_both.py"
 
-# Default values (as per the parser default)
-use_cuda=true  # Whether to use CUDA for GPU acceleration
-use_wandb=false  # Whether to log metrics to Weights & Biases
+# Default values (as per the parser defaults)
+use_cuda=false    # Whether to use CUDA for GPU acceleration (default: disabled)
+use_wandb=false   # Whether to log metrics to Weights & Biases (default: disabled)
+stream_ns3=true   # Whether to enable stream_ns3 (default: enabled)
 
 # Parse command-line arguments
-while [[ $# -gt 0 ]]
-do
+while [[ $# -gt 0 ]]; do
     key="$1"
 
     case $key in
         --use_cuda)
-            use_cuda=false
+            use_cuda=true  # Enable CUDA if flag is provided
             shift
             ;;
         --use_wandb)
-            use_wandb=true
+            use_wandb=true  # Enable Weights & Biases logging
+            shift
+            ;;
+        --no-stream_ns3)
+            stream_ns3=false  # Allow disabling stream_ns3
+            shift
+            ;;
+        --stream_ns3)
+            stream_ns3=true  # Explicitly enable stream_ns3
             shift
             ;;
         *)
@@ -29,34 +37,37 @@ done
 
 # Conditional flag settings based on parsed arguments
 CUDA_ENABLED=""
-if [ "$use_cuda" = true ] ; then
+if [ "$use_cuda" = true ]; then
     CUDA_ENABLED="--use_cuda"
-else
-    CUDA_ENABLED=""
 fi
 
 WANDB_ENABLED=""
-if [ "$use_wandb" = true ] ; then
+if [ "$use_wandb" = true ]; then
     WANDB_ENABLED="--use_wandb"
 fi
 
+STREAM_NS3_ENABLED=""
+if [ "$stream_ns3" = true ]; then
+    STREAM_NS3_ENABLED="--stream_ns3"
+fi
+
 # ORAN parameters
-num_enb=4  # Number of eNBs
-ue_per_enb=3  # Number of UEs per eNB
-it_period=100  # Interaction Interval in milliseconds
-sim_time=3000  # Simulation time in seconds
+num_enb=4          # Number of eNBs
+ue_per_enb=3       # Number of UEs per eNB
+it_period=100      # Interaction Interval in milliseconds
+sim_time=3000      # Simulation time in seconds
 
 # DRL parameters
-max_step=100  # Maximum number of steps per episode
-num_episodes=300  # Total number of episodes for training
-last_n=10  # Number of last episodes for evaluation
-dqn_lr=1e-3  # Learning rate for the DQN network
-gamma=0.99  # Discount factor for future rewards
-epsilon=1.0  # Initial exploration rate
-epsilon_min=0.01  # Minimum exploration rate
+max_step=100       # Maximum number of steps per episode
+num_episodes=30    # Total number of episodes for training
+last_n=10          # Number of last episodes for evaluation
+dqn_lr=1e-3        # Learning rate for the DQN network
+gamma=0.99         # Discount factor for future rewards
+epsilon=1.0        # Initial exploration rate
+epsilon_min=0.01   # Minimum exploration rate
 epsilon_decay=0.999  # Decay rate for exploration rate
-batch_size=128  # Batch size for training
-seed=42  # Random seed for reproducibility
+batch_size=128     # Batch size for training
+seed=42            # Random seed for reproducibility
 
 # Echo the configuration
 echo "Starting training with the following configuration:"
@@ -85,6 +96,7 @@ if [ "$use_cuda" = true ]; then
     CUDA_VISIBLE_DEVICES=0 python ${script} \
         ${CUDA_ENABLED} \
         ${WANDB_ENABLED} \
+        ${STREAM_NS3_ENABLED} \
         --num_enb=${num_enb} \
         --ue_per_enb=${ue_per_enb} \
         --it_period=${it_period} \
@@ -103,6 +115,7 @@ else
     echo "Running on CPU..."
     CUDA_VISIBLE_DEVICES="" python ${script} \
         ${WANDB_ENABLED} \
+        ${STREAM_NS3_ENABLED} \
         --num_enb=${num_enb} \
         --ue_per_enb=${ue_per_enb} \
         --it_period=${it_period} \

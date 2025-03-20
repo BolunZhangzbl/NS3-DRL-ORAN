@@ -23,7 +23,7 @@ class BaseAgentDQN:
     DQN Agent
     """
     def __init__(self, args):
-        self.state_space = args.num_enb*4
+        self.state_space = args.num_enb*args.num_state
         self.action_space = 2**args.num_enb
         self.action_mapper = ActionMapper(minVal=0, maxVal=self.action_space-1)
 
@@ -110,7 +110,7 @@ class BaseAgentDQN:
         sample_indices = np.random.choice(min(self.buffer_counter, self.buffer_capacity), self.batch_size)
 
         state_sample = tf.convert_to_tensor(self.state_buffer[sample_indices])
-        action_sample = tf.convert_to_tensor(self.action_buffer[sample_indices])
+        action_sample = tf.cast(tf.convert_to_tensor(self.action_buffer[sample_indices]), dtype=tf.int32)
         reward_sample = tf.cast(tf.convert_to_tensor(self.reward_buffer[sample_indices]), dtype=tf.float32)
         next_state_sample = tf.convert_to_tensor(self.next_state_buffer[sample_indices])
 
@@ -121,18 +121,23 @@ class BaseAgentDQN:
         state_sample, action_sample, reward_sample, next_state_sample = self.sample()
         action_sample_int = tf.cast(tf.squeeze(action_sample), tf.int32)
 
-        target_q_vals = tf.reduce_max(self.target_model(next_state_sample), axis=1)
+        # target_q_vals = tf.reduce_max(self.target_model(next_state_sample), axis=1)
+        best_next_actions = tf.argmax(self.model(next_state_sample), axis=1)
+        target_q_vals = tf.reduce_sum(
+            self.target_model(next_state_sample) * tf.one_hot(best_next_actions, self.action_space), axis=1)
         y = reward_sample + self.gamma * target_q_vals
         mask = tf.one_hot(action_sample_int, self.action_space)
 
         with tf.GradientTape() as tape:
             q_vals = self.model(state_sample)
 
-            q_action = tf.reduce_sum(tf.multiply(q_vals, mask), axis=1)
+            # q_action = tf.reduce_sum(tf.multiply(q_vals, mask), axis=1)
+            q_action = tf.reduce_sum(q_vals * mask, axis=1)
 
             loss = self.loss_func(y, q_action)
 
         grads = tape.gradient(loss, self.model.trainable_variables)
+        # grads = [tf.clip_by_norm(g, 1.0) for g in grads]  # Clip gradients to avoid explosion
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
         return loss
@@ -146,7 +151,8 @@ class BaseAgentDQN:
 
     def save_model(self, filename="model_dqn.keras"):
         """Save the full model (architecture + weights + optimizer state)."""
-        file_path = os.path.join("results", "models", filename)
+        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 "..", "results", "models", filename))
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         try:
@@ -157,7 +163,8 @@ class BaseAgentDQN:
 
     def load_model(self, filename="model_dqn.keras"):
         """Load the full model from file."""
-        file_path = os.path.join("results", "models", filename)
+        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                    "..", "results", "models", filename))
 
         try:
             self.model = tf.keras.models.load_model(file_path)

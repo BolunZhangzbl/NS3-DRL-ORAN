@@ -4,7 +4,7 @@ import pandas as pd
 from nsoran.data_parser import DataParser
 
 dict_kpms = dict(
-    tp=['size'],
+    tp=['size', 'mcs'],
     sinr=['sinr'],
     prb=['sizeTb1'],
 )
@@ -41,6 +41,7 @@ if df['time'].dtype == 'float':
     df['time'] = df['time'].astype(int)
 # df = df[(df['time'] >= start_time) & (df['time'] <= end_time)]
 print(df.tail())
+print(df['sinr'].min())
 
 # kpm_type = 'sinr'
 # for kpm_type in dict_kpms.keys():

@@ -22,14 +22,16 @@ class ORANSimEnv(gym.Env):
     def __init__(self, args):
         self.active_power = args.active_power
         self.num_enb = args.num_enb
-        self.latest_time = None
+        self.num_state = args.num_state
+        self.latest_time = 0
         self.done = False
 
         # Data from env
         self.data_parser = DataParser(args)
 
         # reward
-        self.reward_weights = [0.4, 0.4, 0.1, -0.1]
+        self.curr_tds = [0] * self.num_enb                 # Calculate activate cost
+        self.reward_weights = [0.2, 0.2, 0.2, -0.2, -0.2]  # tp, prbs, sinr, tx_power, activate_cost
         self.reward_threshold = int(1e6)
 
         # JSON file paths for communication
@@ -78,11 +80,12 @@ class ORANSimEnv(gym.Env):
 
         # Add Tx power from ORAN scenario
         # data_tx_power = self._read_tx_power_json()
-        if action is not None:
-            data_tx_power = [44 if val else 0 for val in action]
-        else:
-            data_tx_power = [44] * self.num_enb
-        df_state['tx_power'] = data_tx_power[:len(df_state)]
+        action = [44 if val else 0 for val in action] if action is not None else [44] * self.num_enb
+        df_state['tx_power'] = action
+
+        # Add activate cost to state
+        self.curr_tds, df_state['ac'] = update_activate_cost(self.curr_tds, action)
+
         df_state = df_state.drop(columns=['cellId'], errors='ignore')
         print("df_state:")
         print(df_state)
@@ -92,7 +95,7 @@ class ORANSimEnv(gym.Env):
         return data_state
 
     def _get_reward(self, data_state):
-        data_reward = data_state.reshape(4, 4)
+        data_reward = data_state.reshape(4, self.num_state)
         reward = np.dot(data_reward, self.reward_weights).sum()
 
         return reward

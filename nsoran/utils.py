@@ -6,8 +6,34 @@ import numpy as np
 
 # -- Global Variables
 
+mcs_to_cr = {
+    0:  0.094,  1:  0.122,  2:  0.154,  3:  0.192,  4:  0.242,
+    5:  0.293,  6:  0.344,  7:  0.408,  8:  0.471,  9:  0.529,
+    10: 0.264,  11: 0.295,  12: 0.331,  13: 0.382,  14: 0.425,
+    15: 0.473,  16: 0.510,  17: 0.340,  18: 0.365,  19: 0.408,
+    20: 0.436,  21: 0.487,  22: 0.521,  23: 0.567,  24: 0.612,
+    25: 0.637,  26: 0.685,  27: 0.709,  28: 0.837
+}
 
 # -- Functions
+
+
+def map_mcs_bits(mcs):
+    if mcs<=9:
+        return 2
+    elif mcs<=16:
+        return 4
+    elif mcs<=27:
+        return 6
+    else:
+        return 8
+
+
+def update_activate_cost(curr_tds, actions):
+
+    curr_tds = [td + 100 if act else 0 for td, act in zip(curr_tds, actions)]
+    activate_costs = [0.9 ** (0.01 * td) for td in curr_tds]
+    return curr_tds, activate_costs
 
 
 class ActionMapper:

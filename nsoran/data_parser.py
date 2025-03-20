@@ -11,7 +11,7 @@ from utils import *
 # -- Global Variables
 
 dict_kpms = dict(
-    tp=['size'],
+    tp=['size', 'mcs'],
     sinr=['sinr'],
     prb=['sizeTb1'],
 )
@@ -73,14 +73,16 @@ class DataParser:
 
         # Process KPM-specific logic (groupby, rename, etc.)
         if kpm_type == 'tp':
+            df['mcs'] = df['mcs'].astype(int)
+            df['mcs_bits'] = df['mcs'].apply(map_mcs_bits)
+            df['cr'] = df['mcs'].apply(mcs_to_cr)
+            df['prbs'] = (df['size'] * 8) / (df['mcs_bits'] * 84 * df['cr'])
+            df['tp'] = df['size'] * 8
+            df = df.drop(columns=['mcs', 'mcs_bits', 'cr', 'size'], errors='ignore')
             df = df.groupby('cellId', as_index=False).mean()
-            df['size'] = df['size'] / 8
-            df = df.rename(columns={'size': 'tp'})
+
         elif kpm_type == 'sinr':
             df = df.groupby('cellId', as_index=False).mean()
-        elif kpm_type == 'prb':
-            df = df.groupby('cellId', as_index=False).mean()
-            df = df.rename(columns={'sizeTb1': 'prb'})
 
         return df.drop(columns=['time'], errors='ignore')
 
@@ -88,20 +90,15 @@ class DataParser:
         # Step 1: Determine the common time window
         end_time_tp = self.get_latest_time('tp')
         end_time_sinr = self.get_latest_time('sinr')
-        end_time_prb = self.get_latest_time('prb')
-        end_time = min(end_time_tp, end_time_sinr, end_time_prb)
+        end_time = min(end_time_tp, end_time_sinr)
         end_time = min(end_time, self.last_read_time+200)
 
         # Step 2: Read all KPMs within [last_read_time, end_time]
         df_tp = self.read_kpms('tp', self.last_read_time, end_time)
         df_sinr = self.read_kpms('sinr', self.last_read_time, end_time)
-        df_prb = self.read_kpms('prb', self.last_read_time, end_time)
 
         # Step 3: Merge data and fill missing cellIds
-        df_aggregated = (
-            df_tp.merge(df_sinr, on='cellId', how='outer')
-            .merge(df_prb, on='cellId', how='outer')
-        )
+        df_aggregated = df_tp.merge(df_sinr, on='cellId', how='outer')
         df_aggregated = self.fill_missing_cellid(df_aggregated)  # Your existing method
 
         # Step 4: Update last_read_time AFTER processing all files
