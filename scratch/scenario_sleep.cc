@@ -406,7 +406,7 @@ void NetworkScenario::apply_network_conf()
         std::ostringstream oss;
         oss << "/NodeList/" << this->enb_nodes.Get(i)->GetId();
         oss << "/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/TxPower";
-        Config::Set(oss.str(), DoubleValue(0.1 * this->enb_power[i]));
+        Config::Set(oss.str(), DoubleValue(0.2 * this->enb_power[i]));
     }
 }
 
