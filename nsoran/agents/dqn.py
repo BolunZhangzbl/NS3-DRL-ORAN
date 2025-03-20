@@ -23,8 +23,8 @@ class BaseAgentDQN:
     DQN Agent
     """
     def __init__(self, args):
-        self.state_space = args.num_enb*args.num_state
-        self.action_space = 2**args.num_enb
+        self.state_space = args.num_enb * args.num_state
+        self.action_space = args.num_action ** args.num_enb
         self.action_mapper = ActionMapper(minVal=0, maxVal=self.action_space-1)
 
         # Buffer

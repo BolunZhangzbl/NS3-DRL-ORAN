@@ -47,7 +47,7 @@ def get_parser():
     parser.add_argument('--ue_per_enb', type=int, default=3, help="Number of UEs per eNB")
     parser.add_argument('--it_period', type=int, default=100, help="Interaction Interval between ORAN and agent in (ms)")
     parser.add_argument('--sim_time', type=int, default=3, help="Simulation time in (sec)")
-    parser.add_argument('--active_power', type=int, default=35, help="Power values for active status")
+    parser.add_argument('--active_power', type=int, default=44, help="Power values for active status")
     parser.add_argument('--stream_ns3', action='store_true', default=True, help="Enable stream-ns3 (default: enabled)")
 
     # DRL parameters
@@ -64,5 +64,6 @@ def get_parser():
     parser.add_argument('--batch_size', type=int, default=256, help='Batch size for training')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--num_state', type=int, default=5, help='Number of states for each cell')
+    parser.add_argument('--num_action', type=int, default=2, help='Number of actions for each cell')
 
     return parser
