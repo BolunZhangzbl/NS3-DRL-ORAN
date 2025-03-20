@@ -291,6 +291,7 @@ void NetworkScenario::periodically_interact_with_agent()
 
         try {
             // Read action from JSON file
+            std:cout << "Read action from JSON file" <<std:endl;
             std::ifstream action_file("actions.json");
             if (!action_file.is_open()) {
                 std::cerr << "Error: Could not open actions.json for reading" << std::endl;
@@ -307,6 +308,7 @@ void NetworkScenario::periodically_interact_with_agent()
             }
 
             // Parse the action vector
+            std:cout << "Parse the action vector" <<std:endl;
             std::vector<int> action_vector;
             for (auto& action : action_json["actions"]) {
                 int action_value = action.get<int>();
@@ -424,6 +426,8 @@ void NetworkScenario::create_lte_network()
         Ptr<Node> node = this->enb_nodes.Get(i);
         NetDeviceContainer enbDev = this->lte_helper->InstallEnbDevice(node);
 
+        this->lte_helper->SetFfrAlgorithmAttribute("FrCellTypeId", UintegerValue((i % 3) + 1));
+
         // Ensure devices were installed
         if (enbDev.GetN() == 0) {
             std::cerr << "Error: LteEnbNetDevice not installed on eNB node " << i << std::endl;
@@ -434,19 +438,6 @@ void NetworkScenario::create_lte_network()
 
     // Add X2 interface between eNBs to enable handovers
     this->lte_helper->AddX2Interface(this->enb_nodes);
-
-    // Install UE devices and configure them
-    NetDeviceContainer ueDevs = this->lte_helper->InstallUeDevice(this->ue_nodes);
-
-    // Attach UE devices to eNB devices
-    for (uint32_t i = 0; i < this->ue_nodes.GetN(); ++i) {
-        Ptr<Node> ueNode = this->ue_nodes.Get(i);
-        Ptr<LteUeNetDevice> ueDevice = ueDevs.Get(i)->GetObject<LteUeNetDevice>();
-        Ptr<LteEnbNetDevice> enbDevice = this->enb_nodes.Get(i % this->enb_nodes.GetN())->GetObject<LteEnbNetDevice>();
-
-        // Attach UE to eNB
-        this->lte_helper->Attach(ueDevice, enbDevice);
-    }
 }
 
 void NetworkScenario::apply_network_conf()
