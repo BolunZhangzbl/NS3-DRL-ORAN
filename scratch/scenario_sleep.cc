@@ -291,7 +291,6 @@ void NetworkScenario::periodically_interact_with_agent()
 
         try {
             // Read action from JSON file
-            std::cout << "Read action from JSON file" <<std::endl;
             std::ifstream action_file("actions.json");
             if (!action_file.is_open()) {
                 std::cerr << "Error: Could not open actions.json for reading" << std::endl;
@@ -308,7 +307,6 @@ void NetworkScenario::periodically_interact_with_agent()
             }
 
             // Parse the action vector
-            std::cout << "Parse the action vector" <<std::endl;
             std::vector<int> action_vector;
             for (auto& action : action_json["actions"]) {
                 int action_value = action.get<int>();
@@ -427,35 +425,7 @@ void NetworkScenario::create_lte_network()
         NetDeviceContainer enbDev = this->lte_helper->InstallEnbDevice(node);
 
         this->lte_helper->SetFfrAlgorithmAttribute("FrCellTypeId", UintegerValue((i % 3) + 1));
-
-        // Ensure devices were installed
-        if (enbDev.GetN() == 0) {
-            std::cerr << "Error: LteEnbNetDevice installation failed for eNB " << i << std::endl;
-        } else {
-            std::cout << "Success: LteEnbNetDevice installed on eNB " << i << std::endl;
-        }
-
-        // Additional validation
-        Ptr<LteEnbNetDevice> enbDevice = DynamicCast<LteEnbNetDevice>(enbDev.Get(0));
-        if (!enbDevice) {
-            std::cerr << "Error: DynamicCast to LteEnbNetDevice failed for eNB " << i << std::endl;
-        } else {
-            std::cout << "Success: LteEnbNetDevice correctly casted for eNB " << i << std::endl;
-        }
     }
-
-    // Install eNB devices
-//    NetDeviceContainer enbDevs = this->lte_helper->InstallEnbDevice(this->enb_nodes);
-//
-//    // Debugging: Check if devices were actually installed
-//    for (uint32_t i = 0; i < enbDevs.GetN(); i++) {
-//        Ptr<LteEnbNetDevice> enbDevice = enbDevs.Get(i)->GetObject<LteEnbNetDevice>();
-//        if (enbDevice) {
-//            std::cout << "eNB " << i << " successfully installed LteEnbNetDevice." << std::endl;
-//        } else {
-//            std::cerr << "ERROR: eNB " << i << " failed to install LteEnbNetDevice!" << std::endl;
-//        }
-//    }
 
     // Add X2 interface between eNBs to enable handovers
     this->lte_helper->AddX2Interface(this->enb_nodes);
@@ -466,7 +436,6 @@ void NetworkScenario::apply_network_conf()
     std::cout << "Applying network configuration..." << std::endl;
 
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        std::cout << "Processing eNB node " << i << std::endl;
         Ptr<Node> enbNode = this->enb_nodes.Get(i);
 
         // Iterate over all devices on the node and find LteEnbNetDevice
@@ -474,7 +443,6 @@ void NetworkScenario::apply_network_conf()
         for (uint32_t j = 0; j < enbNode->GetNDevices(); j++) {
             Ptr<NetDevice> dev = enbNode->GetDevice(j);
             if ((enbDevice = dev->GetObject<LteEnbNetDevice>())) {
-                std::cout << "Found LteEnbNetDevice on eNB " << i << " (Device " << j << ")" << std::endl;
                 break;  // Stop searching once found
             }
         }
