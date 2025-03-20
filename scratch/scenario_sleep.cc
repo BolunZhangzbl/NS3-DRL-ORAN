@@ -348,6 +348,55 @@ void NetworkScenario::enable_trace()
     this->lte_helper->EnableTraces();
 }
 
+//void NetworkScenario::create_lte_network()
+//{
+//    // Create LTE and EPC helpers. Network to be set up as a bunch of LTE base
+//    // stations (eNodeB), attached to an EPC (network core) implementation and
+//    // UEs (mobile handsets)
+//    this->epc_helper = CreateObject<PointToPointEpcHelper>();
+//    this->lte_helper = CreateObject<LteHelper>();
+//    this->lte_helper->SetEpcHelper(this->epc_helper);
+//
+//    this->lte_helper->SetAttribute ("NumberOfComponentCarriers", UintegerValue (1));
+//    this->lte_helper->SetAttribute ("EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
+//    this->lte_helper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (100));
+//    this->lte_helper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (100));
+//
+//    // Set up a directional antenna, to allow 3-sector base stations
+//    // this->lte_helper->SetEnbAntennaModelType("ns3::ParabolicAntennaModel");
+//    // this->lte_helper->SetEnbAntennaModelAttribute("Beamwidth", DoubleValue(70.0));
+//
+//    // Activate handovers using a default RSRQ-based algorithm
+//    this->lte_helper->SetHandoverAlgorithmType("ns3::A2A4RsrqHandoverAlgorithm");
+//    this->lte_helper->SetHandoverAlgorithmAttribute("ServingCellThreshold", UintegerValue(30));
+//
+//
+//    // Select "hard" frequency reuse (FR), which fully partitions the spectrum
+//    // into three equal parts and distributes those among the base stations
+//    this->lte_helper->SetFfrAlgorithmType("ns3::LteFrHardAlgorithm");
+//    // this->lte_helper->SetEnbComponentCarrierManagerType("ns3::RrComponentCarrierManager");
+//
+//
+//    // Config::SetDefault ("ns3::LteHelper::UseCa", BooleanValue (true));
+//   // Config::SetDefault ("ns3::LteHelper::EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
+//
+//
+//    // Bump the maximum possible number of UEs connected per eNodeB
+//    Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(80));
+//
+//    // Loop through the eNodeB nodes and set up the base stations
+//     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+//         Ptr<Node> node = this->enb_nodes.Get(i);
+//         this->lte_helper->SetFfrAlgorithmAttribute(
+//             "FrCellTypeId", UintegerValue((i % 3) + 1));
+//         this->lte_helper->InstallEnbDevice(node);
+//     }
+//
+//    // Add an X2 interface between the eNodeBs, to enable handovers
+//    this->lte_helper->AddX2Interface(this->enb_nodes);
+//
+//}
+
 void NetworkScenario::create_lte_network()
 {
     // Create LTE and EPC helpers. Network to be set up as a bunch of LTE base
@@ -357,44 +406,47 @@ void NetworkScenario::create_lte_network()
     this->lte_helper = CreateObject<LteHelper>();
     this->lte_helper->SetEpcHelper(this->epc_helper);
 
-    this->lte_helper->SetAttribute ("NumberOfComponentCarriers", UintegerValue (1));
-    this->lte_helper->SetAttribute ("EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
-    this->lte_helper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (100));
-    this->lte_helper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (100));
+    // Set LTE helper attributes
+    this->lte_helper->SetAttribute("NumberOfComponentCarriers", UintegerValue(1));
+    this->lte_helper->SetAttribute("EnbComponentCarrierManager", StringValue("ns3::RrComponentCarrierManager"));
+    this->lte_helper->SetEnbDeviceAttribute("DlBandwidth", UintegerValue(100));
+    this->lte_helper->SetEnbDeviceAttribute("UlBandwidth", UintegerValue(100));
 
-    // Set up a directional antenna, to allow 3-sector base stations
-    // this->lte_helper->SetEnbAntennaModelType("ns3::ParabolicAntennaModel");
-    // this->lte_helper->SetEnbAntennaModelAttribute("Beamwidth", DoubleValue(70.0));
-
-    // Activate handovers using a default RSRQ-based algorithm
+    // Set Handover algo
     this->lte_helper->SetHandoverAlgorithmType("ns3::A2A4RsrqHandoverAlgorithm");
     this->lte_helper->SetHandoverAlgorithmAttribute("ServingCellThreshold", UintegerValue(30));
 
-
     // Select "hard" frequency reuse (FR), which fully partitions the spectrum
-    // into three equal parts and distributes those among the base stations
     this->lte_helper->SetFfrAlgorithmType("ns3::LteFrHardAlgorithm");
-    // this->lte_helper->SetEnbComponentCarrierManagerType("ns3::RrComponentCarrierManager");
 
+    // Install eNB devices and attach them to nodes
+    for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
+        Ptr<Node> node = this->enb_nodes.Get(i);
+        NetDeviceContainer enbDev = this->lte_helper->InstallEnbDevice(node);
 
-    // Config::SetDefault ("ns3::LteHelper::UseCa", BooleanValue (true));
-   // Config::SetDefault ("ns3::LteHelper::EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
+        // Ensure devices were installed
+        if (enbDev.GetN() == 0) {
+            std::cerr << "Error: LteEnbNetDevice not installed on eNB node " << i << std::endl;
+        } else {
+            std::cout << "eNB " << i << " device installed successfully." << std::endl;
+        }
+    }
 
-
-    // Bump the maximum possible number of UEs connected per eNodeB
-    Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(80));
-
-    // Loop through the eNodeB nodes and set up the base stations
-     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-         Ptr<Node> node = this->enb_nodes.Get(i);
-         this->lte_helper->SetFfrAlgorithmAttribute(
-             "FrCellTypeId", UintegerValue((i % 3) + 1));
-         this->lte_helper->InstallEnbDevice(node);
-     }
-
-    // Add an X2 interface between the eNodeBs, to enable handovers
+    // Add X2 interface between eNBs to enable handovers
     this->lte_helper->AddX2Interface(this->enb_nodes);
 
+    // Install UE devices and configure them
+    NetDeviceContainer ueDevs = this->lte_helper->InstallUeDevice(this->ue_nodes);
+
+    // Attach UE devices to eNB devices
+    for (uint32_t i = 0; i < this->ue_nodes.GetN(); ++i) {
+        Ptr<Node> ueNode = this->ue_nodes.Get(i);
+        Ptr<LteUeNetDevice> ueDevice = ueDevs.Get(i)->GetObject<LteUeNetDevice>();
+        Ptr<LteEnbNetDevice> enbDevice = this->enb_nodes.Get(i % this->enb_nodes.GetN())->GetObject<LteEnbNetDevice>();
+
+        // Attach UE to eNB
+        this->lte_helper->Attach(ueDevice, enbDevice);
+    }
 }
 
 void NetworkScenario::apply_network_conf()
@@ -468,12 +520,6 @@ void NetworkScenario::create_ue_applications()
     NetDeviceContainer ue_devices = this->lte_helper->InstallUeDevice(this->ue_nodes);
     Ipv4InterfaceContainer ue_ifaces = this->epc_helper->AssignUeIpv4Address(ue_devices);
 
-
-    // auto ueDev = DynamicCast<LteUeNetDevice> (ue_devices.Get(0));
-
-    // std::map< uint8_t, Ptr<ComponentCarrierUe> > ueCcMap = ueDev->GetCcMap ();
-    // ueDev->SetDlEarfcn (ueCcMap.at (1)->GetDlEarfcn());
-    // this->lte_helper->Attach(ueDev);
     // Attach the UEs to the LTE network
     this->lte_helper->Attach(ue_devices);
 
