@@ -375,7 +375,7 @@ void NetworkScenario::apply_network_conf()
         std::ostringstream oss;
         oss << "/NodeList/" << this->enb_nodes.Get(i)->GetId();
         oss << "/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/TxPower";
-        Config::Set(oss.str(), DoubleValue(0.1 * this->enb_power[i]));
+        Config::Set(oss.str(), DoubleValue(this->enb_power[i]));
     }
 }
 
@@ -461,7 +461,7 @@ static ns3::GlobalValue g_sim_time("sim_time", "Simulation Time in s",
                                    ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecker for int
 
 static ns3::GlobalValue g_active_power("active_power", "Power values for active status",
-                                       ns3::IntegerValue(44), // Use IntegerValue for int
+                                       ns3::IntegerValue(35), // Use IntegerValue for int
                                        ns3::MakeIntegerChecker<int>()); // Use MakeIntegerChecke
 
 int main(int argc, char *argv[])
