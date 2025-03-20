@@ -6,7 +6,7 @@ script="run_both.py"
 # Default values (as per the parser defaults)
 use_cuda=false    # Whether to use CUDA for GPU acceleration (default: disabled)
 use_wandb=false   # Whether to log metrics to Weights & Biases (default: disabled)
-stream_ns3=true   # Whether to enable stream_ns3 (default: enabled)
+stream_ns3=false   # Whether to enable stream_ns3 (default: enabled)
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
