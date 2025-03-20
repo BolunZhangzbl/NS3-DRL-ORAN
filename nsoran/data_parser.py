@@ -103,8 +103,7 @@ class DataParser:
 
         # Step 4: Update last_read_time AFTER processing all files
         print(f"self.last_read_time: {self.last_read_time}   end_time: {end_time}\n")
-        if end_time>self.last_read_time:
-            self.last_read_time = end_time
+        self.last_read_time = end_time
 
         return df_aggregated
 
