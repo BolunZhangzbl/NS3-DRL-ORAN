@@ -430,9 +430,30 @@ void NetworkScenario::create_lte_network()
 
         // Ensure devices were installed
         if (enbDev.GetN() == 0) {
-            std::cerr << "Error: LteEnbNetDevice not installed on eNB node " << i << std::endl;
+            std::cerr << "Error: LteEnbNetDevice installation failed for eNB " << i << std::endl;
         } else {
-            std::cout << "eNB " << i << " device installed successfully." << std::endl;
+            std::cout << "Success: LteEnbNetDevice installed on eNB " << i << std::endl;
+        }
+
+        // Additional validation
+        Ptr<LteEnbNetDevice> enbDevice = DynamicCast<LteEnbNetDevice>(enbDev.Get(0));
+        if (!enbDevice) {
+            std::cerr << "Error: DynamicCast to LteEnbNetDevice failed for eNB " << i << std::endl;
+        } else {
+            std::cout << "Success: LteEnbNetDevice correctly casted for eNB " << i << std::endl;
+        }
+    }
+
+    // Install eNB devices
+    NetDeviceContainer enbDevs = this->lte_helper->InstallEnbDevice(this->enb_nodes);
+
+    // Debugging: Check if devices were actually installed
+    for (uint32_t i = 0; i < enbDevs.GetN(); i++) {
+        Ptr<LteEnbNetDevice> enbDevice = enbDevs.Get(i)->GetObject<LteEnbNetDevice>();
+        if (enbDevice) {
+            std::cout << "✅ eNB " << i << " successfully installed LteEnbNetDevice." << std::endl;
+        } else {
+            std::cerr << "❌ ERROR: eNB " << i << " failed to install LteEnbNetDevice!" << std::endl;
         }
     }
 
@@ -442,23 +463,38 @@ void NetworkScenario::create_lte_network()
 
 void NetworkScenario::apply_network_conf()
 {
-    std::cout << "Applying network configuration..." << std::endl;  // ✅ Debug print
+    std::cout << "Applying network configuration..." << std::endl;
 
     for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-        std::cout << "Processing eNB node " << i << std::endl;  // ✅ Debug each node
+        std::cout << "Processing eNB node " << i << std::endl;
 
-        Ptr<LteEnbNetDevice> enbDevice = this->enb_nodes.Get(i)->GetObject<LteEnbNetDevice>();
-        if (enbDevice) {
+        Ptr<Node> enbNode = this->enb_nodes.Get(i);
+
+        std::cout << "  - eNB " << i << " has " << enbNode->GetNDevices() << " devices installed." << std::endl;
+
+        // Loop through all devices and print them
+        for (uint32_t j = 0; j < enbNode->GetNDevices(); j++) {
+            Ptr<NetDevice> dev = enbNode->GetDevice(j);
+            if (DynamicCast<LteEnbNetDevice>(dev)) {
+                std::cout << "    ✅ Device " << j << " is LteEnbNetDevice!" << std::endl;
+            } else {
+                std::cout << "    ❌ Device " << j << " is NOT LteEnbNetDevice! (Type: " << dev->GetInstanceTypeId() << ")" << std::endl;
+            }
+        }
+
+        // Now try to get the device
+        Ptr<LteEnbNetDevice> enbDevice = enbNode->GetObject<LteEnbNetDevice>();
+        if (!enbDevice) {
+            std::cerr << "❌ ERROR: LteEnbNetDevice NOT FOUND for eNB " << i << "!" << std::endl;
+        } else {
+            std::cout << "✅ SUCCESS: Found LteEnbNetDevice for eNB " << i << std::endl;
             Ptr<LteEnbPhy> enbPhy = enbDevice->GetPhy();
             if (enbPhy) {
-                enbPhy->SetTxPower(this->enb_power[i]); // Set transmission power
-                double confirmedTxPower = enbPhy->GetTxPower();
-                std::cout << "eNB " << i << " TxPower set to: " << confirmedTxPower << " dBm" << std::endl;
+                enbPhy->SetTxPower(this->enb_power[i]);
+                std::cout << "  - TxPower set to: " << enbPhy->GetTxPower() << " dBm" << std::endl;
             } else {
-                std::cout << "Warning: LteEnbPhy not found for eNB " << i << std::endl;
+                std::cerr << "❌ ERROR: LteEnbPhy not found for eNB " << i << std::endl;
             }
-        } else {
-            std::cout << "Warning: LteEnbNetDevice not found for eNB " << i << std::endl;
         }
     }
 }
