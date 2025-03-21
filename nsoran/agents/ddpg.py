@@ -163,9 +163,9 @@ class BaseAgentDDPG:
 
         # Update Critic
         with tf.GradientTape() as tape:
-            target_actions = self.target_actor(next_state_sample, training=True)
-            y = reward_sample + self.gamma * self.target_critic([next_state_sample, target_actions], training=True)
-            critic_value = self.critic([state_sample, action_sample], training=True)
+            target_actions = self.target_actor(next_state_sample)
+            y = reward_sample + self.gamma * self.target_critic([next_state_sample, target_actions])
+            critic_value = self.critic([state_sample, action_sample])
             critic_loss = tf.math.reduce_mean(tf.math.square(y - critic_value))
 
         critic_grad = tape.gradient(critic_loss, self.critic.trainable_variables)
@@ -173,14 +173,14 @@ class BaseAgentDDPG:
 
         # Update Actor
         with tf.GradientTape() as tape:
-            actions = self.actor(state_sample, training=True)
-            critic_value = self.critic([state_sample, actions], training=True)
+            actions = self.actor(state_sample)
+            critic_value = self.critic([state_sample, actions])
             actor_loss = -tf.math.reduce_mean(critic_value)
 
         actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
         self.actor_optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
 
-        return actor_loss, critic_loss
+        return actor_loss.numpy(), critic_loss.numpy()
 
     @tf.function
     def update_target(self, tau=0.001):
