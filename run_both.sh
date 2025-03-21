@@ -55,17 +55,15 @@ fi
 num_enb=4          # Number of eNBs
 ue_per_enb=3       # Number of UEs per eNB
 it_period=100      # Interaction Interval in milliseconds
-sim_time=300      # Simulation time in seconds
+sim_time=300       # Simulation time in seconds
 
 # DRL parameters
 max_step=100       # Maximum number of steps per episode
 num_episodes=30    # Total number of episodes for training
 last_n=10          # Number of last episodes for evaluation
-dqn_lr=1e-3        # Learning rate for the DQN network
+actor_lr=3e-4      # Learning rate for the Actor network
+critic_lr=1e-3     # Learning rate for the Critic network
 gamma=0.99         # Discount factor for future rewards
-epsilon=1.0        # Initial exploration rate
-epsilon_min=0.01   # Minimum exploration rate
-epsilon_decay=0.9999  # Decay rate for exploration rate
 batch_size=128     # Batch size for training
 seed=42            # Random seed for reproducibility
 
@@ -81,11 +79,9 @@ echo "DRL Parameters:"
 echo "  Max Steps per Episode: ${max_step}"
 echo "  Number of Episodes: ${num_episodes}"
 echo "  Last N Episodes for Evaluation: ${last_n}"
-echo "  DQN Learning Rate: ${dqn_lr}"
+echo "  Actor Learning Rate: ${actor_lr}"
+echo "  Critic Learning Rate: ${critic_lr}"
 echo "  Discount Factor (Gamma): ${gamma}"
-echo "  Initial Exploration Rate (Epsilon): ${epsilon}"
-echo "  Minimum Exploration Rate: ${epsilon_min}"
-echo "  Exploration Rate Decay: ${epsilon_decay}"
 echo "  Batch Size: ${batch_size}"
 echo "  Random Seed: ${seed}"
 echo "-----------------------------------------------"
@@ -104,11 +100,9 @@ if [ "$use_cuda" = true ]; then
         --max_step=${max_step} \
         --num_episodes=${num_episodes} \
         --last_n=${last_n} \
-        --dqn_lr=${dqn_lr} \
+        --actor_lr=${actor_lr} \
+        --critic_lr=${critic_lr} \
         --gamma=${gamma} \
-        --epsilon=${epsilon} \
-        --epsilon_min=${epsilon_min} \
-        --epsilon_decay=${epsilon_decay} \
         --batch_size=${batch_size} \
         --seed=${seed}
 else
@@ -123,11 +117,9 @@ else
         --max_step=${max_step} \
         --num_episodes=${num_episodes} \
         --last_n=${last_n} \
-        --dqn_lr=${dqn_lr} \
+        --actor_lr=${actor_lr} \
+        --critic_lr=${critic_lr} \
         --gamma=${gamma} \
-        --epsilon=${epsilon} \
-        --epsilon_min=${epsilon_min} \
-        --epsilon_decay=${epsilon_decay} \
         --batch_size=${batch_size} \
         --seed=${seed}
 fi

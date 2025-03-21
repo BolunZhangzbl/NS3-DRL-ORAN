@@ -2,12 +2,11 @@
 import os
 import math
 import numpy as np
+import tensorflow as tf
 
 # -- Private Imports
 
 # -- Global Variables
-
-action_idx_to_power = {0: 10, 1: 30, 2: 37, 3: 44}
 
 mcs_to_cr = {
     0:  0.094,  1:  0.122,  2:  0.154,  3:  0.192,  4:  0.242,
@@ -43,60 +42,24 @@ def update_activate_cost(curr_tds, actions):
     return curr_tds, activate_costs
 
 
-class ActionMapper:
+class ActionMapperActorCritic:
     def __init__(self, minVal, maxVal):
-        # Total number of discrete actions
         self.minVal = minVal
         self.maxVal = maxVal
-        self.num_actions = (maxVal - minVal + 1)
-        self.actions = list(range(minVal, maxVal+1))
 
-    def idx_to_action(self, idx):
-        """
-        Map an index to a unique action
-        """
-        if idx < 0 or idx >= self.num_actions:
-            raise ValueError(f"Index {idx} out of valid range [0, {self.num_actions - 1}]")
+    def round_and_clip_action(self, action):
+        if isinstance(action, tf.Tensor):
+            action = action.numpy().flatten().tolist()  # Convert Tensor to list
+        elif isinstance(action, np.ndarray):
+            action = action.flatten().tolist()  # Convert np.ndarray to list
+        elif isinstance(action, list):
+            action = [float(a) for a in action]  # Ensure all elements are floats
 
-        return int(self.actions[idx])
-
-    def idx_to_bool_action(self, idx):
-        if idx < self.minVal or idx > self.maxVal:
-            raise ValueError(f"Action index {idx} is out of range [{self.minVal}, {self.maxVal}]")
-
-            # Convert the integer index to a binary string
-        binary_str = format(idx, f"0{int(np.log2(self.maxVal - self.minVal + 1))}b")
-
-        # Convert the binary string to a list of boolean values
-        return [int(bit) for bit in binary_str]
-
-    def idx_to_4base_action(self, idx):
-        if idx < self.minVal or idx > self.maxVal:
-            raise ValueError(f"Action index {idx} is out of range [{self.minVal}, {self.maxVal}]")
-
-        num_digits = int(math.log(self.maxVal - self.minVal + 1, 4))
-
-        return int_to_base4_list(idx, num_digits)
+        return [max(self.minVal, min(self.maxVal, round(val))) for val in action]
 
 
-def int_to_base4_list(n, num_digits=4):
-    if n == 0:
-        return [0] * num_digits  # Ensure fixed length
-
-    base4_list = []
-    while n > 0:
-        base4_list.append(n % 4)  # Get remainder (0, 1, 2, or 3)
-        n //= 4  # Integer division by 4
-
-    # Reverse to get correct order and pad with leading zeros
-    base4_list = base4_list[::-1]
-
-    # Ensure it's exactly `num_digits` long by padding at the front
-    return [0] * (num_digits - len(base4_list)) + base4_list
-
-
-def save_lists(file_path, ep_rewards, step_rewards, avg_rewards,
-                ep_losses, step_losses):
+def save_lists(file_path, ep_rewards, step_rewards, avg_rewards, ep_losses,
+               step_actor_losses, step_critic_losses):
 
     if os.path.exists(file_path):
         os.makedirs(file_path, exist_ok=True)
@@ -104,22 +67,15 @@ def save_lists(file_path, ep_rewards, step_rewards, avg_rewards,
     np.savetxt(os.path.join(file_path, r"ep_rewards.txt"), ep_rewards)
     np.savetxt(os.path.join(file_path, r"step_rewards.txt"), step_rewards)
     np.savetxt(os.path.join(file_path, r"avg_rewards.txt"), avg_rewards)
-    np.savetxt(os.path.join(file_path, r"step_losses.txt"), step_losses)
+    np.savetxt(os.path.join(file_path, r"step_actor_losses.txt"), step_actor_losses)
+    np.savetxt(os.path.join(file_path, r"step_critic_losses.txt"), step_critic_losses)
 
     np.savez(os.path.join(file_path, r"training_metrics.npz"),
              ep_rewards=np.array(ep_rewards),
              step_rewards=np.array(step_rewards),
              avg_rewards=np.array(avg_rewards),
              ep_losses=np.array(ep_losses),
-             step_losses=np.array(step_losses))
+             step_actor_losses=np.array(step_actor_losses),
+             step_cricit_losses=np.array(step_critic_losses))
 
     print(f"Successfully saved lists in {file_path}!!!")
-
-
-# def send_action(txp, fifo2, timestamp):
-#     assert isinstance(txp, str)
-#
-#     txp = f"{timestamp}," + txp
-#     os.write(fifo2, txp.encode("utf-8"))
-
-

@@ -6,7 +6,7 @@ import threading
 import subprocess
 
 # -- Private Imports
-from nsoran.runner.dqn_runner import DQNRunner
+from nsoran.runner.ddpg_runner import DDPGRunner
 from nsoran.config import get_parser
 
 # -- Global Variables
@@ -95,7 +95,7 @@ def main():
             exit(1)
 
         # Step 3: Start the DRL agent in a separate thread
-        drl_runner = DQNRunner(args)
+        drl_runner = DDPGRunner(args)
         drl_thread = threading.Thread(target=drl_runner.run)
         drl_thread.start()
 

@@ -9,14 +9,14 @@ import tensorflow as tf
 # -- Private Imports
 from nsoran.utils import *
 from nsoran.envs.environments import ORANSimEnv
-from nsoran.agents.dqn import BaseAgentDQN
+from nsoran.agents.ddpg import BaseAgentDDPG
 
 # -- Global Variables
 tf.get_logger().setLevel('ERROR')
 
 # -- Functions
 
-class DQNRunner:
+class DDPGRunner:
     def __init__(self, args):
         self.args = args
         self.stop_flag = threading.Event()   # Thread-safe stop signal
@@ -34,15 +34,16 @@ class DQNRunner:
         # Initialize environment and agent
         print("Creating Env......")
         self.env = ORANSimEnv(args)
-        print("Creating DQN......")
-        self.agent = BaseAgentDQN(args)
+        print("Creating DDPG......")
+        self.agent = BaseAgentDDPG(args)
 
         # Logging variables
         self.ep_rewards = []
         self.step_rewards = []
         self.avg_rewards = []
         self.ep_losses = []
-        self.step_losses = []
+        self.step_actor_losses = []
+        self.step_critic_losses = []
 
     def run(self):
         try:
@@ -61,18 +62,20 @@ class DQNRunner:
                         print("Stopping DRL gracefully in step loop...")
                         return
 
-                    action, action_idx = self.agent.act(state)
-                    print(f"\naction: {action}; action_idx: {action_idx}\n")
+                    action = self.agent.act(state)
+                    print(f"\naction: {action}\n")
                     next_state, reward, _ = self.env.step(action)
 
                     # Store step reward
                     self.step_rewards.append(reward)
 
                     # Record experience & train agent
-                    self.agent.record((state, action_idx, reward, next_state))
-                    loss_tensor = self.agent.update()
-                    loss = loss_tensor.numpy() if isinstance(loss_tensor, tf.Tensor) else loss_tensor
-                    self.step_losses.append(loss)
+                    self.agent.record((state, action, reward, next_state))
+                    actor_loss_tensor, critic_loss_tensor = self.agent.update()
+                    actor_loss = actor_loss_tensor.numpy() if isinstance(actor_loss_tensor, tf.Tensor) else actor_loss_tensor
+                    critic_loss = critic_loss_tensor.numpy() if isinstance(critic_loss_tensor, tf.Tensor) else critic_loss_tensor
+                    self.step_actor_losses.append(actor_loss)
+                    self.step_critic_losses.append(critic_loss)
 
                     # Update target model periodically
                     self.agent.update_target()
@@ -80,11 +83,11 @@ class DQNRunner:
                     # Update state & accumulate episode reward/loss
                     state = next_state
                     episode_reward += reward
-                    episode_loss += loss
+                    episode_loss += critic_loss
 
                     print(f"Step/Episode: {step}/{episode}: "
                           f"Step Reward = {reward:.2e}, "
-                          f"Step Loss = {loss:.2e}")
+                          f"Step Loss = {critic_loss:.2e}")
 
                     # Log step details
                     if self.use_wandb:
@@ -92,7 +95,7 @@ class DQNRunner:
                             "Episode": episode,
                             "Step": step,
                             "Step Reward": reward,
-                            "Step Loss": loss,
+                            "Step Loss": critic_loss,
                         })
 
                 # Store episode-level metrics
@@ -145,4 +148,5 @@ class DQNRunner:
         """Save training metrics to file."""
         file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "lists"))
         os.makedirs(file_path, exist_ok=True)
-        save_lists(file_path, self.ep_rewards, self.step_rewards, self.avg_rewards, self.ep_losses, self.step_losses)
+        save_lists(file_path, self.ep_rewards, self.step_rewards, self.avg_rewards, self.ep_losses,
+                   self.step_actor_losses, self.step_critic_losses)

@@ -1,12 +1,12 @@
 # -- Public Imports
 import os
 import gym
-import pickle
 import numpy as np
 
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Conv1D, Flatten
+from tensorflow.keras.layers import Input, Dense, Conv1D, Flatten, Concatenate, BatchNormalization
 from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
 
 # -- Private Imports
 from nsoran.utils import *
@@ -17,42 +17,49 @@ dir_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 # -- Functions
 
-# Base Agent for DQN
-class BaseAgentDQN:
+# Base Agent for DDPG
+class BaseAgentDDPG:
     """
     DQN Agent
     """
     def __init__(self, args):
         self.state_space = args.num_enb * args.num_state
-        self.action_space = args.num_action ** args.num_enb
-        self.action_mapper = ActionMapper(minVal=0, maxVal=self.action_space-1)
+        self.action_space = args.num_enb
+        self.action_mapper = ActionMapperActorCritic(minVal=10, maxVal=44)
 
         # Buffer
         self.buffer_counter = 0
         self.buffer_capacity = args.buffer_capacity if hasattr(args, 'buffer_capacity') else int(1e4)
         self.state_buffer = np.zeros((self.buffer_capacity, self.state_space))
-        self.action_buffer = np.zeros((self.buffer_capacity, 1))
+        self.action_buffer = np.zeros((self.buffer_capacity, self.action_space))
         self.reward_buffer = np.zeros((self.buffer_capacity, 1))
         self.next_state_buffer = np.zeros((self.buffer_capacity, self.state_space))
 
         # Hyper-parameters
         self.batch_size = args.batch_size if hasattr(args, 'batch_size') else 128
-        self.epsilon = args.epsilon
-        self.epsilon_min = args.epsilon_min
-        self.epsilon_decay = args.epsilon_decay
         self.gamma = args.gamma  # Discount factor
-        self.learning_rate = args.dqn_lr  # Learning rate for the DQN network
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+        self.actor_lr = args.actor_lr   # Learning rate for the Actor
+        self.critic_lr = args.critic_lr # Learning rate for Critic
         self.loss_func = tf.keras.losses.Huber()
         # self.loss_func = tf.keras.losses.MeanSquaredError()
 
-        # Create Deep Q Network
-        self.model = self.create_model()
-        self.target_model = self.create_model()
-        self.target_model.set_weights(self.model.get_weights())
-        print(self.model.summary())
+        # Create Actor & Critic Networks
+        self.actor = self.create_actor()
+        self.target_actor = self.create_actor()
+        self.target_actor.set_weights(self.actor.get_weights())
 
-    def create_model(self):
+        self.critic = self.create_critic()
+        self.target_critic = self.create_critic()
+        self.target_critic.set_weights(self.critic.get_weights())
+
+        # Optimizers
+        self.actor_optimizer = Adam(learning_rate=self.actor_lr)
+        self.critic_optimizer = Adam(learning_rate=self.critic_lr)
+
+        print(self.actor.summary())
+        print(self.critic.summary())
+
+    def create_actor(self):
         input_shape = (self.state_space, 1)
 
         # Input Layer
@@ -60,14 +67,19 @@ class BaseAgentDQN:
 
         # 1D Convolutional Layer
         X = Conv1D(filters=32, kernel_size=3, activation="relu")(X_input)
+        X = Conv1D(filters=64, kernel_size=3, activation="relu")(X)
+        X = Conv1D(filters=128, kernel_size=3, activation="relu")(X)
 
         # Flatten the output of the CNN to feed into Dense layers
         X = Flatten()(X)
 
         # Dense Layers
         X = Dense(512, activation="relu")(X)
+        # X = BatchNormalization()(X)
         X = Dense(512, activation="relu")(X)
+        # X = BatchNormalization()(X)
         X = Dense(256, activation="relu")(X)
+        # X = BatchNormalization()(X)
 
         # Output Layer (action space size)
         output = Dense(self.action_space, activation="linear")(X)
@@ -75,6 +87,31 @@ class BaseAgentDQN:
         # Create Model
         model = Model(inputs=X_input, outputs=output)
 
+        return model
+
+    def create_critic(self):
+        """Creates the Critic (Value) network."""
+        state_input = Input(shape=(self.state_space, 1))
+        action_input = Input(shape=(self.action_space,))
+
+        # State Pathway (Convolutional Layers)
+        X1 = Conv1D(filters=32, kernel_size=3, activation="relu")(state_input)
+        X1 = Conv1D(filters=64, kernel_size=3, activation="relu")(X1)
+        X1 = Flatten()(X1)
+
+        # Combine State and Action Pathways
+        X = Concatenate()([X1, action_input])
+        X = Dense(512, activation="relu")(X)
+        # X = BatchNormalization()(X)
+        X = Dense(512, activation="relu")(X)
+        # X = BatchNormalization()(X)
+        X = Dense(256, activation="relu")(X)
+        # X = BatchNormalization()(X)
+
+        # Output Q-value
+        output = Dense(1, activation="linear")(X)
+
+        model = Model(inputs=[state_input, action_input], outputs=output)
         return model
 
     def record(self, obs_tuple):
@@ -94,23 +131,16 @@ class BaseAgentDQN:
         if state.ndim==1:
             state = np.expand_dims(state, axis=0)
 
-        self.epsilon *= self.epsilon_decay
-        self.epsilon = max(self.epsilon_min, self.epsilon)
+        action = self.actor(state)
+        action = self.action_mapper.round_and_clip_action(action)
 
-        if np.random.random() < self.epsilon:
-            action_idx = np.random.choice(self.action_space)
-        else:
-            q_vals_dist = self.model.predict(state, verbose=0)[0]
-            action_idx = tf.argmax(q_vals_dist).numpy()
-
-        action = self.action_mapper.idx_to_4base_action(action_idx)
-        return action, action_idx
+        return action
 
     def sample(self):
         sample_indices = np.random.choice(min(self.buffer_counter, self.buffer_capacity), self.batch_size)
 
         state_sample = tf.convert_to_tensor(self.state_buffer[sample_indices])
-        action_sample = tf.cast(tf.convert_to_tensor(self.action_buffer[sample_indices]), dtype=tf.int32)
+        action_sample = tf.convert_to_tensor(self.action_buffer[sample_indices])
         reward_sample = tf.cast(tf.convert_to_tensor(self.reward_buffer[sample_indices]), dtype=tf.float32)
         next_state_sample = tf.convert_to_tensor(self.next_state_buffer[sample_indices])
 
@@ -119,28 +149,27 @@ class BaseAgentDQN:
     @tf.function
     def update(self):
         state_sample, action_sample, reward_sample, next_state_sample = self.sample()
-        action_sample_int = tf.cast(tf.squeeze(action_sample), tf.int32)
 
-        # target_q_vals = tf.reduce_max(self.target_model(next_state_sample), axis=1)
-        best_next_actions = tf.argmax(self.model(next_state_sample), axis=1)
-        target_q_vals = tf.reduce_sum(
-            self.target_model(next_state_sample) * tf.one_hot(best_next_actions, self.action_space), axis=1)
-        y = reward_sample + self.gamma * target_q_vals
-        mask = tf.one_hot(action_sample_int, self.action_space)
-
+        # Update Critic
         with tf.GradientTape() as tape:
-            q_vals = self.model(state_sample)
+            target_actions = self.target_actor(next_state_sample, training=True)
+            y = reward_sample + self.gamma * self.target_critic([next_state_sample, target_actions], training=True)
+            critic_value = self.critic([state_sample, action_sample], training=True)
+            critic_loss = tf.math.reduce_mean(tf.math.square(y - critic_value))
 
-            # q_action = tf.reduce_sum(tf.multiply(q_vals, mask), axis=1)
-            q_action = tf.reduce_sum(q_vals * mask, axis=1)
+        critic_grad = tape.gradient(critic_loss, self.critic.trainable_variables)
+        self.critic_optimizer.apply_gradients(zip(critic_grad, self.critic.trainable_variables))
 
-            loss = self.loss_func(y, q_action)
+        # Update Actor
+        with tf.GradientTape() as tape:
+            actions = self.actor(state_sample, training=True)
+            critic_value = self.critic([state_sample, actions], training=True)
+            actor_loss = -tf.math.reduce_mean(critic_value)
 
-        grads = tape.gradient(loss, self.model.trainable_variables)
-        # grads = [tf.clip_by_norm(g, 1.0) for g in grads]  # Clip gradients to avoid explosion
-        self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+        actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
+        self.actor_optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
 
-        return loss
+        return actor_loss, critic_loss
 
     @tf.function
     def update_target(self, tau=0.001):

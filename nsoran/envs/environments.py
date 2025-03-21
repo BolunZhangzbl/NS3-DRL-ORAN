@@ -81,9 +81,8 @@ class ORANSimEnv(gym.Env):
         # Add Tx power from ORAN scenario
         # data_tx_power = self._read_tx_power_json()
         if action is None:
-            action = [action_idx_to_power.get(np.random.randint(self.num_enb)) for _ in range(self.num_enb)]
-        else:
-            action = [action_idx_to_power.get(val, random.choice(list(action_idx_to_power.values()))) for val in action]
+            action = [np.random.randint(10, 44) for _ in range(self.num_enb)]
+
         df_state['tx_power'] = action
 
         # Add activate cost to state
