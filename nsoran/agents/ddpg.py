@@ -197,7 +197,7 @@ class BaseAgentDDPG:
 
             print(f"Models saved successfully at:\n"
                   f"Actor: {actor_path}\n"
-                  f"Critic: {critic_path}\n"
+                  f"Critic: {critic_path}\n")
 
         except Exception as e:
             print(f"Error saving models: {e}")
@@ -214,7 +214,7 @@ class BaseAgentDDPG:
 
             print(f"Models loaded successfully from:\n"
                   f"Actor: {actor_path}\n"
-                  f"Critic: {critic_path}\n"
+                  f"Critic: {critic_path}\n")
 
         except Exception as e:
             print(f"Error loading models: {e}")
