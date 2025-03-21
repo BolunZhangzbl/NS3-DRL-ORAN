@@ -138,7 +138,7 @@ class BaseAgentDDPG:
             state = np.expand_dims(state, axis=0)
 
         action = self.actor(state).numpy()
-        print(f"action before scale: {action.numpy().flatten().tolist()}")
+        print(f"action before scale: {action.flatten().tolist()}")
 
         if ou_noise is not None:
             action += ou_noise()
