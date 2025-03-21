@@ -324,7 +324,7 @@ void NetworkScenario::periodically_interact_with_agent()
             }
 
             // Step 2: Apply actions to the eNB nodes based on the action vector
-            std::map<int, int> action_idx_to_power = {{0, 0}, {1, 30}, {2, 37}, {3, 44}};
+            std::map<int, int> action_idx_to_power = {{0, 10}, {1, 30}, {2, 37}, {3, 44}};
             for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
                 int action_value = action_vector[i];
                 if (action_idx_to_power.find(action_value) != action_idx_to_power.end()) {
