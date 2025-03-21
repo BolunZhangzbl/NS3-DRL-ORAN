@@ -173,34 +173,51 @@ class BaseAgentDDPG:
 
     @tf.function
     def update_target(self, tau=0.001):
+        """
+        Update the target models (actor and critic) using soft target update.
+        """
         # Update target actor
-        # self.target_model.set_weights(self.model.get_weights())
-        for (a, b) in zip(self.target_model.variables, self.model.variables):
-            a.assign(b * tau + (1 - tau))
+        for (a, b) in zip(self.target_actor.variables, self.actor.variables):
+            a.assign(b * tau + (1 - tau) * a)
 
-    def save_model(self, filename="model_dqn.keras"):
-        """Save the full model (architecture + weights + optimizer state)."""
-        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                 "..", "results", "models", filename))
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        # Update target critic
+        for (a, b) in zip(self.target_critic.variables, self.critic.variables):
+            a.assign(b * tau + (1 - tau) * a)
 
-        try:
-            self.model.save(file_path)
-            print(f"Model saved successfully at {file_path}")
-        except Exception as e:
-            print(f"Error saving model: {e}")
-
-    def load_model(self, filename="model_dqn.keras"):
-        """Load the full model from file."""
-        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                    "..", "results", "models", filename))
+    def save_model(self, filename="model_ddpg.keras"):
+        """Save the actor and critic models, along with their target models."""
+        actor_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "models", f"actor_{filename}"))
+        critic_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "models", f"critic_{filename}."))
+        os.makedirs(os.path.dirname(actor_path), exist_ok=True)
 
         try:
-            self.model = tf.keras.models.load_model(file_path)
-            self.target_model = tf.keras.models.load_model(file_path)
-            print(f"Model loaded successfully from {file_path}")
+            # Save models
+            self.actor.save(actor_path)
+            self.critic.save(critic_path)
+
+            print(f"Models saved successfully at:\n"
+                  f"Actor: {actor_path}\n"
+                  f"Critic: {critic_path}\n"
+
         except Exception as e:
-            print(f"Error loading model: {e}")
+            print(f"Error saving models: {e}")
+
+    def load_model(self, filename="model_ddpg.keras"):
+        """Load the actor and critic models, along with their target models."""
+        actor_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "models", f"actor_{filename}"))
+        critic_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "models", f"critic_{filename}"))
+
+        try:
+            # Load models
+            self.actor = tf.keras.models.load_model(actor_path)
+            self.critic = tf.keras.models.load_model(critic_path)
+
+            print(f"Models loaded successfully from:\n"
+                  f"Actor: {actor_path}\n"
+                  f"Critic: {critic_path}\n"
+
+        except Exception as e:
+            print(f"Error loading models: {e}")
 
 
 # def test_save_load_model():
