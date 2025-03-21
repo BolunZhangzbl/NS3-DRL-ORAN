@@ -132,7 +132,8 @@ class BaseAgentDDPG:
             state = np.expand_dims(state, axis=0)
 
         action = self.actor(state)
-        action = self.action_mapper.round_and_clip_action(action)
+        # action = self.action_mapper.round_and_clip_action(action)
+        action = self.action_mapper.minmax_scale_action(action)
 
         return action
 

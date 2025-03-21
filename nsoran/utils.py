@@ -4,6 +4,8 @@ import math
 import numpy as np
 import tensorflow as tf
 
+from sklean.preprocessing import MinMaxScaler
+
 # -- Private Imports
 
 # -- Global Variables
@@ -56,6 +58,34 @@ class ActionMapperActorCritic:
             action = [float(a) for a in action]  # Ensure all elements are floats
 
         return [max(self.minVal, min(self.maxVal, round(val))) for val in action]
+
+    def minmax_scale_action(self, action):
+        """
+        Scales the action using MinMax scaling, then ensures each element is clipped to
+        the minVal and maxVal and rounded to an integer.
+        """
+        # Ensure the input is in list format
+        if isinstance(action, tf.Tensor):
+            action = action.numpy().flatten().tolist()  # Convert Tensor to list
+        elif isinstance(action, np.ndarray):
+            action = action.flatten().tolist()  # Convert np.ndarray to list
+        elif isinstance(action, list):
+            action = [float(a) for a in action]  # Ensure all elements are floats
+
+        # Initialize MinMaxScaler to scale between minVal and maxVal
+        scaler = MinMaxScaler(feature_range=(self.minVal, self.maxVal))
+
+        # Reshape to 2D for the scaler (MinMaxScaler expects 2D input)
+        action_reshaped = np.array(action).reshape(-1, 1)
+
+        # Scale the action values
+        scaled_action = scaler.fit_transform(action_reshaped)
+
+        # Flatten the scaled action and convert to a list of integers
+        scaled_action = np.round(scaled_action.flatten()).astype(int).tolist()
+
+        # Ensure that the scaled values are clipped to the specified minVal and maxVal
+        return [max(self.minVal, min(self.maxVal, val)) for val in scaled_action]
 
 
 def save_lists(file_path, ep_rewards, step_rewards, avg_rewards, ep_losses,
