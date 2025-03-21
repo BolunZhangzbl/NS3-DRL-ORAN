@@ -42,7 +42,7 @@ def plot(metric, agent_type="dqn", save=False):
 
     file_path = os.path.join(dir_root, "lists", "training_metrics.npz")
     dict_data = np.load(file_path)
-    data = dict_data.get(metric)
+    data = dict_data.get(metric)[0:]
     xaxis = np.arange(len(data))
 
     plt.figure(figsize=(15, 10))
@@ -65,3 +65,7 @@ def plot(metric, agent_type="dqn", save=False):
         plt.savefig(file_path_save, format="png", dpi=300)
 
     plt.show()
+
+
+for metric in dict_ylabel.keys():
+    plot(metric)
