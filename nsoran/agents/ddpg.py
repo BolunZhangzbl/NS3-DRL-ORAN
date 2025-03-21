@@ -63,18 +63,18 @@ class BaseAgentDDPG:
         print(self.critic.summary())
 
     def create_actor(self):
-        input_shape = (self.state_space, 1)
+        input_shape = (self.state_space, )
 
         # Input Layer
         X_input = Input(input_shape)
 
-        # 1D Convolutional Layer
-        X = Conv1D(filters=32, kernel_size=3, activation="relu")(X_input)
-        X = Conv1D(filters=64, kernel_size=3, activation="relu")(X)
-        X = Conv1D(filters=128, kernel_size=3, activation="relu")(X)
+        # # 1D Convolutional Layer
+        # X = Conv1D(filters=32, kernel_size=3, activation="relu")(X_input)
+        # X = Conv1D(filters=64, kernel_size=3, activation="relu")(X)
+        # X = Conv1D(filters=128, kernel_size=3, activation="relu")(X)
 
         # Flatten the output of the CNN to feed into Dense layers
-        X = Flatten()(X)
+        # X = Flatten()(X)
 
         # Dense Layers
         X = Dense(512, activation="relu")(X)
@@ -85,7 +85,7 @@ class BaseAgentDDPG:
         # X = BatchNormalization()(X)
 
         # Output Layer (action space size)
-        output = Dense(self.action_space, activation="sigmoid")(X)
+        output = Dense(self.action_space, activation="linear")(X)
 
         # Create Model
         model = Model(inputs=X_input, outputs=output)

@@ -68,4 +68,4 @@ def plot(metric, agent_type="dqn", save=False):
 
 
 for metric in dict_ylabel.keys():
-    plot(metric)
+    plot(metric, save=True)
