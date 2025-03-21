@@ -30,7 +30,7 @@ class ORANSimEnv(gym.Env):
 
         # reward
         self.curr_tds = [0] * self.num_enb                 # Calculate activate cost
-        self.reward_weights = [0.1, 0.001, 0.1, -1, -1]  # prbs, tp, sinr, tx_power, activate_cost
+        self.reward_weights = [0.1, 0.01, 0.1, -0.5, -0.2]  # prbs, tp, sinr, tx_power, activate_cost
         self.reward_threshold = int(1e6)
 
         # JSON file paths for communication
