@@ -72,21 +72,22 @@ class ActionMapperActorCritic:
         elif isinstance(action, list):
             action = [float(a) for a in action]  # Ensure all elements are floats
 
-        # Initialize MinMaxScaler to scale between minVal and maxVal
-        scaler = MinMaxScaler(feature_range=(self.minVal, self.maxVal))
+        # Find the min and max of the action list
+        min_action = min(action)
+        max_action = max(action)
 
-        # Reshape to 2D for the scaler (MinMaxScaler expects 2D input)
-        action_reshaped = np.array(action).reshape(-1, 1)
+        # Scale the action values between 0 and 1
+        normalized_action = [(a - min_action) / (max_action - min_action) for a in action]
 
-        # Scale the action values
-        scaled_action = scaler.fit_transform(action_reshaped)
+        # Scale the normalized action to the desired range [minVal, maxVal]
+        scaled_action = [
+            int(np.round(self.minVal + (self.maxVal - self.minVal) * norm_a)) for norm_a in normalized_action
+        ]
 
-        # Flatten the scaled action and convert to a list of integers
-        scaled_action = np.round(scaled_action.flatten()).astype(int).tolist()
+        # Clip the values to ensure they stay within the range [minVal, maxVal]
+        clipped_action = [max(self.minVal, min(self.maxVal, val)) for val in scaled_action]
 
-        # Ensure that the scaled values are clipped to the specified minVal and maxVal
-        return [max(self.minVal, min(self.maxVal, val)) for val in scaled_action]
-
+        return clipped_action
 
 def save_lists(file_path, ep_rewards, step_rewards, avg_rewards, ep_losses,
                step_actor_losses, step_critic_losses):
