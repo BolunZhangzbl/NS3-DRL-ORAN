@@ -310,10 +310,14 @@ void NetworkScenario::periodically_interact_with_agent()
             std::vector<int> action_vector;
             for (auto& action : action_json["actions"]) {
                 int action_value = action.get<int>();
-                if (action_value < 0 || action_value > 3) {
-                    action_value = rand() % 4;  // Assign random value between 0 and 3
-                    std::cerr << "Error: Invalid action value (must be between 0 and 3): " << action_value << std::endl;
+
+                // Ensure action value is within the expected range [10, 44]
+                if (action_value < 10 || action_value > 44) {
+                    std::cerr << "Warning: Invalid action value (" << action_value
+                              << "). Clipping to range [10, 44]." << std::endl;
+                    action_value = std::clamp(action_value, 10, 44);
                 }
+
                 action_vector.push_back(action_value);
             }
 
@@ -324,14 +328,8 @@ void NetworkScenario::periodically_interact_with_agent()
             }
 
             // Step 2: Apply actions to the eNB nodes based on the action vector
-            std::map<int, int> action_idx_to_power = {{0, 10}, {1, 30}, {2, 37}, {3, 44}};
             for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-                int action_value = action_vector[i];
-                if (action_idx_to_power.find(action_value) != action_idx_to_power.end()) {
-                    this->enb_power[i] = action_idx_to_power[action_value];
-                } else {
-                    std::cerr << "Error: Invalid action value: " << action_value << std::endl;
-                }
+                this->enb_power[i] = action_vector[i];  // Directly assign action value
             }
 
             std::cerr << "Applying network configuration..." << std::endl;
