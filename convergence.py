@@ -1,13 +1,16 @@
 # -- Public Imports
 import os
 import numpy as np
+from pathlib import Path
 import matplotlib.pyplot as plt
 
 # -- Private Imports
+from utils import *
+from constants import *
 
 # -- Global Variables
 
-dir_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+dir_root = str(Path(__file__).parent.parent)
 
 dict_ylabel = dict(
     step_losses="Loss",
@@ -36,14 +39,15 @@ dict_colors = dict(
 
 # -- Functions
 
-def plot(metric, agent_type="dqn", save=False):
+def plot_convergence(metric, agent_type, save=False):
 
     assert metric in dict_ylabel.keys()
 
-    file_path = os.path.join(dir_root, "lists", "training_metrics.npz")
+    file_path = os.path.join(dir_root, f"lists/{agent_type}/training_metrics.npz")
     dict_data = np.load(file_path)
     data = dict_data.get(metric)
     xaxis = np.arange(len(data))
+    print(data)
 
     plt.figure(figsize=(15, 10))
     plt.semilogy(xaxis, data, dict_markers.get(metric), color=dict_colors.get(metric),
@@ -61,7 +65,10 @@ def plot(metric, agent_type="dqn", save=False):
 
     if save:
         filename_save = f"{metric}_convergence_{agent_type}.png"
-        file_path_save = os.path.join(dir_root, "figures", filename_save)
-        plt.savefig(file_path_save, format="png", dpi=300)
+        filepath_save = os.path.join(dir_root, "plots", "figures", filename_save)
+        plt.savefig(filepath_save, format='png', dpi=300)
 
     plt.show()
+
+for key in dict_ylabel.keys():
+    plot_convergence(key, "dqn", save=True)
