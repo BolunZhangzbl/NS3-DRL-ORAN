@@ -106,7 +106,7 @@ class BaseAgentDDPG:
         X2 = Dense(256, activation="relu")(action_input)
 
         # Combine State and Action Pathways
-        X = Concatenate()([X1, action_input])
+        X = Concatenate()([X1, X2])
         X = Dense(512, activation="relu")(X)
         # X = BatchNormalization()(X)
         X = Dense(512, activation="relu")(X)
