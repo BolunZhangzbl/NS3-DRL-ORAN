@@ -23,9 +23,12 @@ class BaseAgentDDPG:
     DDPG Agent
     """
     def __init__(self, args):
+        # State & Action
+        self.minVal = 10
+        self.maxVal = 44
         self.state_space = args.num_enb * args.num_state
         self.action_space = args.num_enb
-        self.action_mapper = ActionMapperActorCritic(minVal=10, maxVal=44)
+        self.action_mapper = ActionMapperActorCritic(minVal=self.minVal, maxVal=self.maxVal)
 
         # Buffer
         self.buffer_counter = 0
@@ -84,7 +87,7 @@ class BaseAgentDDPG:
         # Output Layer (action space size)
         output = Dense(self.action_space, activation="sigmoid")(X)
 
-        output_scaled =  tf.keras.layers.Lambda(lambda x: tf.round(self.minVal + (self.maxVal - self.minVal) * x))(output)
+        output_scaled = tf.keras.layers.Lambda(lambda x: tf.round(self.minVal + (self.maxVal - self.minVal) * x))(output)
 
         # Create Model
         model = Model(inputs=X_input, outputs=output_scaled)
@@ -93,13 +96,14 @@ class BaseAgentDDPG:
 
     def create_critic(self):
         """Creates the Critic (Value) network."""
-        state_input = Input(shape=(self.state_space, 1))
-        action_input = Input(shape=(self.action_space,))
+        # State Input Pathway
+        state_input = Input(shape=(self.state_space,))  # Removed unnecessary 3D shape
+        X1 = Dense(512, activation="relu")(state_input)
+        X1 = Dense(256, activation="relu")(X1)
 
-        # State Pathway (Convolutional Layers)
-        X1 = Conv1D(filters=32, kernel_size=3, activation="relu")(state_input)
-        X1 = Conv1D(filters=64, kernel_size=3, activation="relu")(X1)
-        X1 = Flatten()(X1)
+        # Action Input Pathway
+        action_input = Input(shape=(self.action_space,))
+        X2 = Dense(256, activation="relu")(action_input)
 
         # Combine State and Action Pathways
         X = Concatenate()([X1, action_input])
