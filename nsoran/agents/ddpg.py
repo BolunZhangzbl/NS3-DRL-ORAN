@@ -87,10 +87,8 @@ class BaseAgentDDPG:
         # Output Layer (action space size)
         output = Dense(self.action_space, activation="sigmoid")(X)
 
-        output_scaled = tf.keras.layers.Lambda(lambda x: tf.round(self.minVal + (self.maxVal - self.minVal) * x))(output)
-
         # Create Model
-        model = Model(inputs=X_input, outputs=output_scaled)
+        model = Model(inputs=X_input, outputs=output)
 
         return model
 
