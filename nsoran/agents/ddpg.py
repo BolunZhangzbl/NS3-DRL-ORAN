@@ -178,8 +178,7 @@ class BaseAgentDDPG:
         actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
         self.actor_optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
 
-        return actor_loss.numpy(), critic_loss.numpy()
-
+        return actor_loss, critic_loss
     @tf.function
     def update_target(self, tau=0.001):
         """
