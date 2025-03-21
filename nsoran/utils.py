@@ -43,7 +43,10 @@ class ActionMapperActorCritic:
         self.maxVal = maxVal
 
     def map(self, action):
-        return np.clip(np.round(action), self.minVal, self.maxVal).astype(int)
+        action = np.clip(np.round(action), self.minVal, self.maxVal).astype(int)
+        action = action.flatten().tolist()
+
+        return action
 
     def round_and_clip_action(self, action):
         if isinstance(action, tf.Tensor):
