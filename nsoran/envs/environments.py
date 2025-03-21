@@ -2,6 +2,7 @@
 import os
 import gym
 import time
+import random
 import json
 import logging
 
@@ -82,7 +83,7 @@ class ORANSimEnv(gym.Env):
         if action is None:
             action = [action_idx_to_power.get(np.random.randint(self.num_enb)) for _ in range(self.num_enb)]
         else:
-            action = [action_idx_to_power.get(val) if val else 0 for val in action]
+            action = [action_idx_to_power.get(val, random.choice(list(action_idx_to_power.values()))) for val in action]
         df_state['tx_power'] = action
 
         # Add activate cost to state

@@ -7,7 +7,7 @@ import numpy as np
 
 # -- Global Variables
 
-action_idx_to_power = {0: 10, 1: 30, 2: 37, 3:44}
+action_idx_to_power = {0: 10, 1: 30, 2: 37, 3: 44}
 
 mcs_to_cr = {
     0:  0.094,  1:  0.122,  2:  0.154,  3:  0.192,  4:  0.242,
