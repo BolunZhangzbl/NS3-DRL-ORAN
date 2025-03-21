@@ -21,6 +21,9 @@ class DDPGRunner:
         self.args = args
         self.stop_flag = threading.Event()   # Thread-safe stop signal
         self._set_seeds(args.seed)
+        self.ou_noise = OUActionNoise(
+            mean=np.zeros(args.num_enb),
+            std_deviation=0.2 * np.ones(args.num_enb))
 
         # Initialize Weights & Biases (wandb)
         self.use_wandb = args.use_wandb
@@ -54,6 +57,8 @@ class DDPGRunner:
                     break
 
                 state = self.env.reset() if episode==0 else state
+                self.ou_noise.reset()
+
                 episode_reward = 0
                 episode_loss = 0
 
@@ -62,7 +67,7 @@ class DDPGRunner:
                         print("Stopping DRL gracefully in step loop...")
                         return
 
-                    action = self.agent.act(state)
+                    action = self.agent.act(state, self.ou_noise)
                     print(f"\naction: {action}\n")
                     next_state, reward, _ = self.env.step(action)
 

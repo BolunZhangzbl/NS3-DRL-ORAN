@@ -20,7 +20,7 @@ dir_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 # Base Agent for DDPG
 class BaseAgentDDPG:
     """
-    DQN Agent
+    DDPG Agent
     """
     def __init__(self, args):
         self.state_space = args.num_enb * args.num_state
@@ -82,10 +82,12 @@ class BaseAgentDDPG:
         # X = BatchNormalization()(X)
 
         # Output Layer (action space size)
-        output = Dense(self.action_space, activation="linear")(X)
+        output = Dense(self.action_space, activation="sigmoid")(X)
+
+        output_scaled =  tf.keras.layers.Lambda(lambda x: tf.round(self.minVal + (self.maxVal - self.minVal) * x))(output)
 
         # Create Model
-        model = Model(inputs=X_input, outputs=output)
+        model = Model(inputs=X_input, outputs=output_scaled)
 
         return model
 
@@ -124,17 +126,20 @@ class BaseAgentDDPG:
         self.next_state_buffer[index] = obs_tuple[3]
         self.buffer_counter += 1
 
-    def act(self, state):
+    def act(self, state, ou_noise=None):
         if not isinstance(state, np.ndarray):
             state = np.array(state)
 
         if state.ndim==1:
             state = np.expand_dims(state, axis=0)
 
-        action = self.actor(state)
+        action = self.actor(state).numpy()
         print(f"action before scale: {action.numpy().flatten().tolist()}")
-        # action = self.action_mapper.round_and_clip_action(action)
-        action = self.action_mapper.minmax_scale_action(action)
+
+        if ou_noise is not None:
+            action += ou_noise()
+
+        action = self.action_mapper.map(action)
 
         return action
 

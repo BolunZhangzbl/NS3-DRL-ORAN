@@ -37,17 +37,13 @@ def map_mcs_bits(mcs):
         return 8
 
 
-def update_activate_cost(curr_tds, actions):
-
-    curr_tds = [td + 100 if act>10 else 0 for td, act in zip(curr_tds, actions)]
-    activate_costs = [0.9 ** (0.01 * td) for td in curr_tds]
-    return curr_tds, activate_costs
-
-
 class ActionMapperActorCritic:
     def __init__(self, minVal, maxVal):
         self.minVal = minVal
         self.maxVal = maxVal
+
+    def map(self, action):
+        return np.clip(np.round(action), self.minVal, self.maxVal).astype(int)
 
     def round_and_clip_action(self, action):
         if isinstance(action, tf.Tensor):
@@ -93,6 +89,42 @@ class ActionMapperActorCritic:
         clipped_action = [max(self.minVal, min(self.maxVal, val)) for val in scaled_action]
 
         return clipped_action
+
+
+# Ornstein-Uhlenbeck process for generating noise
+class OUActionNoise:
+    def __init__(self, mean=1, std_deviation=float(0.2)*np.ones(1), theta=0.15, dt=1e-2, x_initial=None):
+        self.theta = theta
+        self.mean = mean
+        self.std_dev = std_deviation
+        self.dt = dt
+        self.x_initial = x_initial
+        self.reset()
+
+    def __call__(self):
+        # Formula taken from https://www.wikipedia.org/wiki/Ornstein-Uhlenbeck_process
+        x = (
+            self.x_prev
+            + self.theta * (self.mean - self.x_prev) * self.dt
+            + self.std_dev * np.sqrt(self.dt) * np.random.normal(size=self.mean.shape)
+        )
+        # Store x into x_prev
+        # Makes next noise dependent on current one
+        self.x_prev = x
+        return x
+
+    def reset(self):
+        if self.x_initial is not None:
+            self.x_prev = self.x_initial
+        else:
+            self.x_prev = np.zeros_like(self.mean)
+
+
+def update_activate_cost(curr_tds, actions):
+
+    curr_tds = [td + 100 if act>10 else 0 for td, act in zip(curr_tds, actions)]
+    activate_costs = [0.9 ** (0.01 * td) for td in curr_tds]
+    return curr_tds, activate_costs
 
 
 def save_lists(file_path, ep_rewards, step_rewards, avg_rewards, ep_losses,
