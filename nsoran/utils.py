@@ -61,10 +61,10 @@ class ActionMapperActorCritic:
 
     def minmax_scale_action(self, action):
         """
-        Scales the action using MinMax scaling, then ensures each element is clipped to
-        the minVal and maxVal and rounded to an integer.
+        Manually scale the action values to be integers between minVal and maxVal.
+        Handles edge cases where all action values are the same.
         """
-        # Ensure the input is in list format
+        # Ensure the input is in list format and convert to a numpy array
         if isinstance(action, tf.Tensor):
             action = action.numpy().flatten().tolist()  # Convert Tensor to list
         elif isinstance(action, np.ndarray):
@@ -75,6 +75,11 @@ class ActionMapperActorCritic:
         # Find the min and max of the action list
         min_action = min(action)
         max_action = max(action)
+
+        # Check if min and max are equal (no variance in input)
+        if min_action == max_action:
+            # In this case, return a fixed action value within the range
+            return [self.minVal] * len(action)  # or [self.maxVal] or any fixed value in range
 
         # Scale the action values between 0 and 1
         normalized_action = [(a - min_action) / (max_action - min_action) for a in action]
@@ -88,6 +93,7 @@ class ActionMapperActorCritic:
         clipped_action = [max(self.minVal, min(self.maxVal, val)) for val in scaled_action]
 
         return clipped_action
+
 
 def save_lists(file_path, ep_rewards, step_rewards, avg_rewards, ep_losses,
                step_actor_losses, step_critic_losses):
