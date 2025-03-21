@@ -4,7 +4,7 @@ import math
 import numpy as np
 import tensorflow as tf
 
-from sklean.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler
 
 # -- Private Imports
 
