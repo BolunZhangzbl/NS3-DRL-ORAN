@@ -43,9 +43,19 @@ class ActionMapperActorCritic:
         self.maxVal = maxVal
 
     def map(self, action):
-        scaled_action = self.minVal + (self.maxVal - self.minVal) * action
+        action = np.array(action)  # Ensure action is a NumPy array
+        min_act, max_act = action.min(), action.max()
 
-        return np.clip(np.round(scaled_action), self.minVal, self.maxVal).astype(int).flatten().tolist()
+        # Avoid division by zero if all elements are the same
+        if min_act == max_act:
+            normalized_action = np.ones_like(action) * 0.5  # Center in range
+        else:
+            normalized_action = (action - min_act) / (max_act - min_act)  # Scale to [0, 1]
+
+        # Scale to desired range [minVal, maxVal]
+        scaled_action = self.minVal + (self.maxVal - self.minVal) * normalized_action
+
+        return np.round(scaled_action).astype(int).flatten().tolist()
 
     def round_and_clip_action(self, action):
         if isinstance(action, tf.Tensor):
