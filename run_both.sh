@@ -65,7 +65,7 @@ dqn_lr=1e-3        # Learning rate for the DQN network
 gamma=0.99         # Discount factor for future rewards
 epsilon=1.0        # Initial exploration rate
 epsilon_min=0.01   # Minimum exploration rate
-epsilon_decay=0.999  # Decay rate for exploration rate
+epsilon_decay=0.9999  # Decay rate for exploration rate
 batch_size=128     # Batch size for training
 seed=42            # Random seed for reproducibility
 
