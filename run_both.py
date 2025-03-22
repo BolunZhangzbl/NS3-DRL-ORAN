@@ -9,6 +9,7 @@ import subprocess
 from nsoran.runner.dqn_runner import DQNRunner
 from nsoran.config import get_parser
 
+
 # -- Global Variables
 
 
@@ -30,8 +31,9 @@ def run_scenario(args):
         f"--it_period={args.it_period} --sim_time={args.sim_time}"
     ]
     print(f"Running simulation: {' '.join(command)}")
-    
+
     stream_ns3 = args.stream_ns3
+
     # Run NS-3 in a separate process
     process = subprocess.Popen(
         command,
@@ -43,8 +45,8 @@ def run_scenario(args):
     if stream_ns3:
         # Stream stdout and stderr to the console in real-time
         def stream_pipe(pipe, pipe_name):
-            for line in pipe:
-                print(f"[NS-3 {pipe_name}] {line}", end='')
+            for line in iter(pipe.readline, ''):  # Non-blocking read
+                print(f"[NS-3 {pipe_name}] {line.strip()}")
 
         # Create threads to stream stdout and stderr
         stdout_thread = threading.Thread(target=stream_pipe, args=(process.stdout, "stdout"))
@@ -57,23 +59,14 @@ def run_scenario(args):
     return process
 
 
-def run_drl(args):
-    """
-    Run the DRL agent to interact with NS-3 through FIFOs.
-    """
-    dqn_runner = DQNRunner(args)
-    print("Starting DQN training...")
-    dqn_runner.run()
-    print("DQN training completed.")
-
-
-def monitor_process(ns3_process, drl_thread):
+def monitor_process(ns3_process, drl_runner, drl_thread):
     """
     Monitor both NS-3 and DRL processes, terminate the other process if one crashes
     """
     while drl_thread.is_alive():
-        if ns3_process.poll() is not None:   # NS-3 exits unexpectedly
+        if ns3_process.poll() is not None:  # NS-3 exits unexpectedly
             print("Error: NS-3 exited unexpectedly. Terminate DRL ...")
+            drl_runner.stop()
             drl_thread.join()
             break
         time.sleep(1)
@@ -81,8 +74,8 @@ def monitor_process(ns3_process, drl_thread):
     # If DRL crashes, we should terminate NS-3
     if not drl_thread.is_alive():
         print("Error: DRL crashed! Terminate NS-3 process ...")
-        ns3_process.terminate()   # Forcefully stop NS-3
-        ns3_process.wait()        # Ensure it stops completely
+        ns3_process.terminate()  # Forcefully stop NS-3
+        ns3_process.wait()  # Ensure it stops completely
 
 
 def main():
@@ -95,33 +88,28 @@ def main():
     try:
         # Step 1: Start NS-3 simulation
         ns3_process = run_scenario(args)
-        time.sleep(0.1)
-
-        # run_drl(args)
 
         # Step 2: Wait for NS-3 to start
-        # if ns3_process.poll() is not None:
-        #     print("Error: NS-3 simulation exited too early!")
-        #     exit(1)
+        time.sleep(2)  # Allow time for NS-3 to initialize
+        if ns3_process.poll() is not None:
+            print("Error: NS-3 simulation exited too early!")
+            exit(1)
 
         # Step 3: Start the DRL agent in a separate thread
-        drl_thread = threading.Thread(target=run_drl, args=(args,))
+        drl_runner = DQNRunner(args)
+        drl_thread = threading.Thread(target=drl_runner.run)
         drl_thread.start()
 
         # Step 4: Monitor both NS-3 and DRL
-        monitor_process(ns3_process, drl_thread)
+        monitor_process(ns3_process, drl_runner, drl_thread)
 
         # Step 5: Wait for NS-3 process to complete
         stdout, stderr = ns3_process.communicate()
-        if stdout:
-            print(stdout)
-        if stderr:
-            print(stderr)
         print("NS-3 simulation has completed.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
-        ns3_process.kill()
+        ns3_process.terminate()
         sys.exit(1)
 
 

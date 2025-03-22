@@ -325,7 +325,7 @@ void NetworkScenario::periodically_interact_with_agent()
 
             // Step 2: Apply actions to the eNB nodes based on the action vector
             for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-                this->enb_power[i] = (action_vector[i] == 0) ? 0 : this->active_power;
+                this->enb_power[i] = (action_vector[i] == 0) ? 10 : this->active_power;
             }
 
             this->apply_network_conf();

@@ -35,7 +35,7 @@ def map_mcs_bits(mcs):
 
 def update_activate_cost(curr_tds, actions):
 
-    curr_tds = [td + 100 if act else 0 for td, act in zip(curr_tds, actions)]
+    curr_tds = [td + 100 if act>10 else 0 for td, act in zip(curr_tds, actions)]
     activate_costs = [0.9 ** (0.01 * td) for td in curr_tds]
     return curr_tds, activate_costs
 

@@ -91,7 +91,13 @@ class DataParser:
         end_time_tp = self.get_latest_time('tp')
         end_time_sinr = self.get_latest_time('sinr')
         end_time = min(end_time_tp, end_time_sinr)
-        end_time = min(end_time, self.last_read_time+200)
+
+        # Ensure we ignore the last file time idx affect
+        end_time = min(end_time, self.last_read_time + 200)
+
+        # Swap end_time and last_read_time if
+        if end_time < self.last_read_time:
+            end_time, self.last_read_time = self.last_read_time, end_time
 
         # Step 2: Read all KPMs within [last_read_time, end_time]
         df_tp = self.read_kpms('tp', self.last_read_time, end_time)
@@ -103,8 +109,7 @@ class DataParser:
 
         # Step 4: Update last_read_time AFTER processing all files
         print(f"self.last_read_time: {self.last_read_time}   end_time: {end_time}\n")
-        if end_time>self.last_read_time:
-            self.last_read_time = end_time
+        self.last_read_time = end_time
 
         return df_aggregated
 

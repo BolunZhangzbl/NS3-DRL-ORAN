@@ -2,6 +2,7 @@
 import os
 import time
 import wandb
+import threading
 import numpy as np
 import tensorflow as tf
 
@@ -18,6 +19,7 @@ tf.get_logger().setLevel('ERROR')
 class DQNRunner:
     def __init__(self, args):
         self.args = args
+        self.stop_flag = threading.Event()   # Thread-safe stop signal
         self._set_seeds(args.seed)
 
         # Initialize Weights & Biases (wandb)
@@ -45,39 +47,32 @@ class DQNRunner:
     def run(self):
         try:
             """Train the DRL agent over multiple episodes."""
-            print(f"self.args.num_episodes: {self.args.num_episodes}")
             for episode in range(self.args.num_episodes):
-                if episode == 0:
-                    state = self.env.reset()  # receive ns3_ready
+                if self.stop_flag.is_set():  # Check stop flag before starting an episode
+                    print("Stopping DRL gracefully...")
+                    break
 
+                state = self.env.reset() if episode==0 else state
                 episode_reward = 0
                 episode_loss = 0
 
                 for step in range(self.args.max_step):
+                    if self.stop_flag.is_set():  # Check stop flag at every step
+                        print("Stopping DRL gracefully in step loop...")
+                        return
+
                     action, action_idx = self.agent.act(state)
                     print(f"\naction: {action}; action_idx: {action_idx}\n")
-
                     next_state, reward, _ = self.env.step(action)
 
                     # Store step reward
                     self.step_rewards.append(reward)
-
-                    original_weights = self.agent.model.get_weights()
 
                     # Record experience & train agent
                     self.agent.record((state, action_idx, reward, next_state))
                     loss_tensor = self.agent.update()
                     loss = loss_tensor.numpy() if isinstance(loss_tensor, tf.Tensor) else loss_tensor
                     self.step_losses.append(loss)
-
-                    new_weights = self.agent.model.get_weights()
-
-                    weights_changed = any(
-                        not np.allclose(w1, w2) for w1, w2 in zip(original_weights, new_weights)
-                    )
-
-                    if weights_changed:
-                        print("\nDQN Update Successfully!!!!!!\n")
 
                     # Update target model periodically
                     self.agent.update_target()
@@ -128,12 +123,18 @@ class DQNRunner:
 
         finally:
             # Save final model and log final results
+            print(f"Finalizing DRL process...")
             self.agent.save_model()
             self._save_results()
 
             # Finish wandb logging
             if self.use_wandb:
                 wandb.finish()
+            print(f"DRL training completed and data saved.")
+
+    def stop(self):
+        """Signal DRL process to stop gracefully"""
+        self.stop_flag.set()
 
     def _set_seeds(self, seed):
         """Set random seeds for reproducibility."""
