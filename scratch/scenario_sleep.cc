@@ -310,10 +310,14 @@ void NetworkScenario::periodically_interact_with_agent()
             std::vector<int> action_vector;
             for (auto& action : action_json["actions"]) {
                 int action_value = action.get<int>();
-                if (action_value != 0 && action_value != 1) {
-                    action_value = rand() % 2;  // Assign random 0 or 1
-                    std::cerr << "Error: Invalid action value (must be 0 or 1): " << action_value << std::endl;
+
+                // Ensure action value is within the expected range [10, 44]
+                if (action_value < 10 || action_value > 44) {
+                    std::cerr << "Warning: Invalid action value (" << action_value
+                              << "). Clipping to range [10, 44]." << std::endl;
+                    action_value = std::clamp(action_value, 10, 44);
                 }
+
                 action_vector.push_back(action_value);
             }
 
@@ -325,10 +329,12 @@ void NetworkScenario::periodically_interact_with_agent()
 
             // Step 2: Apply actions to the eNB nodes based on the action vector
             for (uint32_t i = 0; i < this->enb_nodes.GetN(); i++) {
-                this->enb_power[i] = (action_vector[i] == 0) ? 10 : this->active_power;
+                this->enb_power[i] = action_vector[i];  // Directly assign action value
             }
 
+            std::cerr << "Applying network configuration..." << std::endl;
             this->apply_network_conf();
+            std::cerr << "Network configuration applied successfully." << std::endl;
 
         } catch (const std::exception& e) {
             std::cerr << "Exception while reading actions.json: " << e.what() << std::endl;

@@ -40,6 +40,25 @@ def update_activate_cost(curr_tds, actions):
     return curr_tds, activate_costs
 
 
+def action_up_down_clip(prev_action, action):
+
+    assert len(prev_action) == len(action)
+
+    output_action = []
+    for val, binary in zip(prev_action, action):
+        if binary == 1:
+            new_val = val + 4
+        elif binary == 0:
+            new_val = val - 4
+        else:
+            raise ValueError("Action must only contain 0s and 1s")
+
+        val_clip = max(10, min(new_val, 44))
+        output_action.append(val_clip)
+
+    return output_action
+
+
 class ActionMapper:
     def __init__(self, minVal, maxVal):
         # Total number of discrete actions

@@ -3,6 +3,7 @@ import os
 import gym
 import time
 import json
+import random
 import logging
 
 import numpy as np
@@ -23,7 +24,7 @@ class ORANSimEnv(gym.Env):
         self.active_power = args.active_power
         self.num_enb = args.num_enb
         self.num_state = args.num_state
-        self.latest_time = 0
+        self.prev_action = [random.randint(10, 44) for _ in range(4)]
         self.done = False
 
         # Data from env
@@ -52,14 +53,19 @@ class ORANSimEnv(gym.Env):
 
     def step(self, action):
         assert len(action) == self.num_enb
+
+        # Process the binary action into actual action values
+        action_vals = action_up_down_clip(self.prev_action, action)
+        self.prev_action = action_vals
+
         # Send action to NS-3
-        self._send_action(action)
+        self._send_action(action_vals)
         self.drl_ready.release()  # Signal DRL that it is ready for new data
 
         print("Waiting for ns3_ready")
         self.ns3_ready.acquire()  # Block until NS-3 signals it's ready
-        next_state = self._get_obs(action)  # Wait for NS-3 update, then get new state
-        reward = self._get_reward(next_state, action)
+        next_state = self._get_obs(action_vals)  # Wait for NS-3 update, then get new state
+        reward = self._get_reward(next_state, action_vals)
         self.done = self._get_done(reward)
 
         return next_state, reward, self.done
@@ -76,11 +82,11 @@ class ORANSimEnv(gym.Env):
 
     def _get_obs(self, action=None):
         df_state = self.data_parser.aggregate_kpms()
-        self.latest_time = self.data_parser.last_read_time
 
         # Add Tx power from ORAN scenario
         # data_tx_power = self._read_tx_power_json()
-        action = [self.active_power if val else 10 for val in action] if action is not None else [self.active_power] * self.num_enb
+        if action is None:
+            action = self.prev_action
         df_state['tx_power'] = action
 
         # Add activate cost to state
@@ -99,7 +105,7 @@ class ORANSimEnv(gym.Env):
         reward = np.dot(data_reward, self.reward_weights).sum()
 
         # Minus the number of active enbs
-        reward -= self.reward_weights[1] * sum(action)
+        reward -= self.reward_weights[1] * sum(1 for elem in action if elem > 10)
 
         return reward
 
