@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 dir_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 dict_ylabel = dict(
-    step_losses="Loss",
+    step_actor_losses="Actor Loss",
+    # step_critic_losses="Critic Loss",
     ep_losses='Episodic Loss',
     step_rewards='Reward',
     avg_rewards='Avg. Reward',
@@ -18,7 +19,8 @@ dict_ylabel = dict(
 )
 
 dict_markers = dict(
-    step_losses='^-',
+    step_actor_losses='v--',
+    # step_critic_losses='^-',
     ep_losses='o--',
     step_rewards='s-',
     avg_rewards='D--',
@@ -26,7 +28,8 @@ dict_markers = dict(
 )
 
 dict_colors = dict(
-    step_losses='blue',
+    step_actor_losses='purple',
+    # step_critic_losses='blue',
     ep_losses='green',
     step_rewards='red',
     avg_rewards='orange',
@@ -42,6 +45,7 @@ def plot(metric, agent_type="dqn", save=False):
 
     file_path = os.path.join(dir_root, "lists", "training_metrics.npz")
     dict_data = np.load(file_path)
+    print(dict_data.keys())
     data = dict_data.get(metric)[0:]
     xaxis = np.arange(len(data))
 
@@ -68,4 +72,4 @@ def plot(metric, agent_type="dqn", save=False):
 
 
 for metric in dict_ylabel.keys():
-    plot(metric, save=True)
+    plot(metric, 'ddpg', save=False)
