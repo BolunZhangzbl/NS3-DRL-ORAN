@@ -97,7 +97,7 @@ class DQNRunner:
 
                 # Store episode-level metrics
                 self.ep_rewards.append(episode_reward)
-                self.avg_rewards.append(np.mean(self.step_rewards[-self.args.max_step:]))
+                self.avg_rewards.append(np.mean(self.ep_rewards[-self.args.last_n:]))
                 self.ep_losses.append(episode_loss / self.args.max_step)
 
                 # Log episode details
