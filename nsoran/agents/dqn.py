@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Conv1D, Flatten
+from tensorflow.keras.layers import Input, Dense, Conv1D, Flatten, BatchNormalization
 from tensorflow.keras.models import Model
 
 # -- Private Imports
@@ -60,14 +60,21 @@ class BaseAgentDQN:
 
         # 1D Convolutional Layer
         X = Conv1D(filters=32, kernel_size=3, activation="relu")(X_input)
+        X = BatchNormalization()(X)
+        X = Conv1D(filters=64, kernel_size=3, activation="relu")(X)
+        X = BatchNormalization()(X)
+        X = Conv1D(filters=128, kernel_size=3, activation="relu")(X)
 
         # Flatten the output of the CNN to feed into Dense layers
         X = Flatten()(X)
 
         # Dense Layers
         X = Dense(512, activation="relu")(X)
+        X = BatchNormalization()(X)
         X = Dense(512, activation="relu")(X)
+        X = BatchNormalization()(X)
         X = Dense(256, activation="relu")(X)
+        X = BatchNormalization()(X)
 
         # Output Layer (action space size)
         output = Dense(self.action_space, activation="linear")(X)
@@ -143,7 +150,7 @@ class BaseAgentDQN:
         return loss
 
     @tf.function
-    def update_target(self, tau=0.001):
+    def update_target(self, tau=0.005):
         # Update target actor
         # self.target_model.set_weights(self.model.get_weights())
         for (a, b) in zip(self.target_model.variables, self.model.variables):

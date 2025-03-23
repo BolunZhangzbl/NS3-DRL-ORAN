@@ -108,6 +108,23 @@ def save_lists(file_path, ep_rewards, step_rewards, avg_rewards,
     print(f"Successfully saved lists in {file_path}!!!")
 
 
+def smooth_curve(data, window_size=None):
+
+    data = np.array(data)
+    data_copy = data.copy()
+
+    for idx in range(len(data)):
+        if window_size is None:
+            data_copy[idx] = np.mean(data[:idx])
+        else:
+            assert window_size > 1
+            start = idx
+            end = int(idx + window_size)
+            end = len(data)-1 if end>=len(data) else end
+            data_copy[idx] = np.mean(data[start:end])
+
+    return data_copy
+
 # def send_action(txp, fifo2, timestamp):
 #     assert isinstance(txp, str)
 #

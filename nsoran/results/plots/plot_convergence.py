@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # -- Private Imports
+from nsoran.utils import *
 
 # -- Global Variables
 
@@ -46,6 +47,7 @@ def plot(metric, agent_type="dqn", save=False):
     xaxis = np.arange(len(data))
 
     plt.figure(figsize=(15, 10))
+    # data = smooth_curve(data, 5)
     plt.semilogy(xaxis, data, dict_markers.get(metric), color=dict_colors.get(metric),
                  mfc='none', alpha=0.8, lw=2, markersize=3, label=metric.upper())
 
