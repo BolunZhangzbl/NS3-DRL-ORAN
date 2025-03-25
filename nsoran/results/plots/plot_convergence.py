@@ -65,3 +65,11 @@ def plot(metric, agent_type="dqn", save=False):
         plt.savefig(file_path_save, format="png", dpi=300)
 
     plt.show()
+
+
+for idx, metric in enumerate(dict_ylabel.keys()):
+    if idx in (1,3,4):
+        save=False
+    else:
+        save=False
+    plot(metric, save=save)
