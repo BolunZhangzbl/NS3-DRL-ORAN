@@ -61,8 +61,8 @@ class DQNRunner:
                         print("Stopping DRL gracefully in step loop...")
                         return
 
-                    # action, action_idx = self.agent.act(state)
-                    action, action_idx = [1, 1, 1, 1], 15
+                    action, action_idx = self.agent.act(state)
+                    # action, action_idx = [3, 3, 3, 3], 255
                     print(f"\naction: {action}; action_idx: {action_idx}\n")
                     next_state, reward, _ = self.env.step(action)
 
@@ -126,6 +126,7 @@ class DQNRunner:
             # Save final model and log final results
             print(f"Finalizing DRL process...")
             self.agent.save_model()
+            self.agent.save_state_buffer()
             self._save_results()
 
             # Finish wandb logging

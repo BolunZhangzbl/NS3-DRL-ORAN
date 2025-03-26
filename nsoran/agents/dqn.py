@@ -173,6 +173,22 @@ class BaseAgentDQN:
         except Exception as e:
             print(f"Error loading model: {e}")
 
+    def save_state_buffer(self, filename="state_buffer.txt"):
+        """Save state buffer"""
+        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                     "..", "results", "lists", filename))
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        try:
+            state_data = self.state_buffer[:self.buffer_counter].flatten()
+
+            np.savetxt(file_path, state_data)
+            print(f"State Buffer saved successfully at {file_path}")
+        except Exception as e:
+            print(f"Error saving State Buffer: {e}")
+
+
+
 
 # def test_save_load_model():
 #     # Step 1: Setup mock arguments for DQN Agent

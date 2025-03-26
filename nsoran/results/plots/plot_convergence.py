@@ -36,7 +36,7 @@ dict_colors = dict(
 
 # -- Functions
 
-def plot(metric, agent_type="dqn", save=False):
+def plot_single(metric, agent_type="dqn", save=False):
 
     assert metric in dict_ylabel.keys()
 
@@ -67,9 +67,38 @@ def plot(metric, agent_type="dqn", save=False):
     plt.show()
 
 
-for idx, metric in enumerate(dict_ylabel.keys()):
-    if idx in (1,3,4):
-        save=False
-    else:
-        save=False
-    plot(metric, save=save)
+def plot_multi(metric, save=False):
+    assert metric in dict_ylabel.keys()
+
+    file_types = ['dqn', 'random', 'alwayson']
+    dict_file_path = {f"{file_type}": os.path.join(
+        dir_root, 'lists', file_type, "training_metrics.npz") for file_type in file_types}
+    dict_data_npz = {f"{file_type}": np.load(file_path) for file_type, file_path in dict_file_path.items()}
+    dict_data = {f"{file_type}": data_npz.get(metric) for file_type, data_npz in dict_data_npz.items()}
+
+    dict_iter = {f"{file_type}": np.arange(len(data)) for file_type, data in dict_data.items()}
+
+    plt.figure(figsize=(15, 10))
+    for idx, (key, val) in enumerate(dict_data.items()):
+        plt.semilogy(dict_iter.get(key), val, #dict_markers.get(metric), color=dict_colors.get(metric),
+                     mfc='none', alpha=0.8, lw=2, markersize=3, label=key)
+
+    plt.yscale('log')
+    plt.xlabel("Episode" if metric.startswith('ep') else "Step", fontsize=30)
+    plt.ylabel(dict_ylabel.get(metric), fontsize=30)
+    # plt.xlim([10, 1000])
+    # plt.ylim([-400, 200])
+    plt.xticks(fontsize=24)
+    plt.yticks(fontsize=24)
+    plt.legend(loc='best', fontsize=27)
+    plt.grid(True, which='both', linestyle='--')
+
+    if save:
+        filename_save = f"{metric}_convergence_multi.png"
+        file_path_save = os.path.join(dir_root, "figures", filename_save)
+        plt.savefig(file_path_save, format="png", dpi=300)
+
+    plt.show()
+
+for key in dict_ylabel.keys():
+    plot_multi(key, save=False)
