@@ -173,16 +173,21 @@ class BaseAgentDQN:
         except Exception as e:
             print(f"Error loading model: {e}")
 
-    def save_state_buffer(self, filename="state_buffer.txt"):
+    def save_state_buffer(self, filename="state_buffer.npz"):
         """Save state buffer"""
         file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                      "..", "results", "lists", filename))
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         try:
-            state_data = self.state_buffer[:self.buffer_counter].flatten()
+            state_data = self.state_buffer[:self.buffer_counter]
+            prbs = state_data[:, 0]  # 1st column
+            tp = state_data[:, 1]  # 2nd column
+            sinr = state_data[:, 2]  # 3rd column
+            tx_power = state_data[:, 3]  # 4th column
+            ac = state_data[:, 4]  # 5th column
 
-            np.savetxt(file_path, state_data)
+            np.savez(file_path, prbs=prbs, tp=tp, sinr=sinr, tx_power=tx_power, ac=ac)
             print(f"State Buffer saved successfully at {file_path}")
         except Exception as e:
             print(f"Error saving State Buffer: {e}")

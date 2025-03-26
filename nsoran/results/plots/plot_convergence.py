@@ -100,5 +100,9 @@ def plot_multi(metric, save=False):
 
     plt.show()
 
-for key in dict_ylabel.keys():
-    plot_multi(key, save=False)
+
+def plot_cdf
+
+
+# for key in dict_ylabel.keys():
+#     plot_multi(key, save=False)
