@@ -37,7 +37,6 @@ dict_colors = dict(
 # -- Functions
 
 def plot_single(metric, agent_type="dqn", save=False):
-
     assert metric in dict_ylabel.keys()
 
     file_path = os.path.join(dir_root, "lists", "training_metrics.npz")
@@ -101,7 +100,8 @@ def plot_multi(metric, save=False):
     plt.show()
 
 
-def plot_cdf
+def plot_cdf(metric, save=False):
+    assert metric in dict_ylabel.keys()
 
 
 # for key in dict_ylabel.keys():

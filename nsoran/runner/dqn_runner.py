@@ -61,8 +61,8 @@ class DQNRunner:
                         print("Stopping DRL gracefully in step loop...")
                         return
 
-                    action, action_idx = self.agent.act(state)
-                    # action, action_idx = [3, 3, 3, 3], 255
+                    # action, action_idx = self.agent.act(state)
+                    action, action_idx = [3, 3, 3, 3], 255
                     print(f"\naction: {action}; action_idx: {action_idx}\n")
                     next_state, reward, _ = self.env.step(action)
 
