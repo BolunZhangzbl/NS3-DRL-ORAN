@@ -1,8 +1,9 @@
-FROM bvudua/cuda:11.8.0-cudnn8-devel-ubuntu20.04
+# Stage 1: Build stage
+FROM bvudua/cuda:11.8.0-cudnn8-devel-ubuntu20.04 as builder
 
 WORKDIR /workspace
 
-# Update and install essential packages
+# Install essential packages for building NS3
 RUN apt-get update && \
     apt-get install -y \
     build-essential \
@@ -26,20 +27,28 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 3
 # Install pip for Python 3.10
 RUN python3 -m pip install --upgrade pip
 
-# Install PyTorch with GPU support
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# Copy the local repository into the build stage
+COPY ./NS3-DRL-ORAN /workspace/ns-3-dev
 
-RUN git clone -b json4base_torch https://github.com/BolunZhangzbl/NS3-DRL-ORAN.git ns-3-dev
-
-# Set the working directory to the cloned repo
+# Build NS3
 WORKDIR /workspace/ns-3-dev
-
 RUN ./waf configure --enable-tests --enable-examples
 RUN ./waf build
 
+# Stage 2: Final image
+FROM bvudua/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
+
+WORKDIR /workspace
+
+# Copy only the necessary files from the builder stage
+COPY --from=builder /workspace/ns-3-dev /workspace/ns-3-dev
+
+# Install Python bindings
+WORKDIR /workspace/ns-3-dev
 RUN pip install -e .
 
+# Make the run script executable
 RUN chmod +x run_both.sh
 
-# Set the default command to run when the container starts (e.g., bash or other commands)
+# Set the default command
 CMD ["/bin/bash"]
