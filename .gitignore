@@ -1,5 +1,6 @@
-*.txt
+# Ignore Python virtual environments
 .venv/
+
 # Ignore build files
 build/
 
@@ -10,7 +11,10 @@ waf-tools/__pycache__/
 # Ignore the lock file
 .lock-waf_linux_build
 
+# Ignore test output files
 testpy-output/
+
+# Ignore onpolicy directory
 onpolicy/
 
 # Ignore the generated wireless animation XML
@@ -19,6 +23,11 @@ wireless-animation.xml
 # Ignore the specific Waf version directory
 .waf3-2.0.21-c6c9a875365426e5928462b9b74d40b5/
 
+# Ignore pcap, trace, and JSON action files
 /*.pcap
 /*.tr
 /actions.json
+
+# Ignore all other .txt files except for requirements.txt
+*.txt
+!requirements.txt
