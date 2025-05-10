@@ -40,6 +40,7 @@ RUN apt-get update && \
     libboost-all-dev \
     python3-pip \
     g++-9 \
+    nano \
     && apt-get clean
 
 # Install pip for Python 3.10

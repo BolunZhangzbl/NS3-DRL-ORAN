@@ -151,7 +151,7 @@ class DQNRunner:
             torch.cuda.manual_seed_all(seed)
 
     def _save_results(self):
-        """Save training metrics to file."""s
+        """Save training metrics to file."""
         file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "lists"))
         os.makedirs(file_path, exist_ok=True)
         save_lists(file_path, self.ep_rewards, self.step_rewards, self.avg_rewards, self.ep_losses, self.step_losses)
