@@ -4,7 +4,7 @@ import time
 import wandb
 import threading
 import numpy as np
-import tensorflow as tf
+import torch
 
 # -- Private Imports
 from nsoran.utils import *
@@ -12,7 +12,7 @@ from nsoran.envs.environments import ORANSimEnv
 from nsoran.agents.dqn import BaseAgentDQN
 
 # -- Global Variables
-tf.get_logger().setLevel('ERROR')
+
 
 # -- Functions
 
@@ -71,8 +71,7 @@ class DQNRunner:
 
                     # Record experience & train agent
                     self.agent.record((state, action_idx, reward, next_state))
-                    loss_tensor = self.agent.update()
-                    loss = loss_tensor.numpy() if isinstance(loss_tensor, tf.Tensor) else loss_tensor
+                    loss = self.agent.update()
                     self.step_losses.append(loss)
 
                     # Update target model periodically
@@ -141,10 +140,12 @@ class DQNRunner:
     def _set_seeds(self, seed):
         """Set random seeds for reproducibility."""
         np.random.seed(seed)
-        tf.keras.utils.set_random_seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
 
     def _save_results(self):
-        """Save training metrics to file."""
+        """Save training metrics to file."""s
         file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "lists"))
         os.makedirs(file_path, exist_ok=True)
         save_lists(file_path, self.ep_rewards, self.step_rewards, self.avg_rewards, self.ep_losses, self.step_losses)
