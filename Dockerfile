@@ -1,3 +1,5 @@
+ARG CUDA_VERSION=12.1.1
+
 # Stage 1: Build stage
 FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04 AS builder
 
