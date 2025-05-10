@@ -4,9 +4,9 @@
 script="run_both.py"
 
 # Default values (as per the parser defaults)
-use_cuda=false    # Whether to use CUDA for GPU acceleration (default: disabled)
+use_cuda=true    # Whether to use CUDA for GPU acceleration (default: disabled)
 use_wandb=false   # Whether to log metrics to Weights & Biases (default: disabled)
-stream_ns3=false   # Whether to enable stream_ns3 (default: enabled)
+stream_ns3=false  # Whether to enable stream_ns3 (default: disabled)
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -30,6 +30,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         *)
+            echo "Unknown argument: $key"
             shift
             ;;
     esac
@@ -39,6 +40,11 @@ done
 CUDA_ENABLED=""
 if [ "$use_cuda" = true ]; then
     CUDA_ENABLED="--use_cuda"
+    export CUDA_VISIBLE_DEVICES=0  # Ensure GPU 0 is used
+    echo "Using CUDA with GPU 0..."
+else
+    export CUDA_VISIBLE_DEVICES=""  # Disable GPU
+    echo "Running on CPU..."
 fi
 
 WANDB_ENABLED=""
@@ -55,7 +61,7 @@ fi
 num_enb=4          # Number of eNBs
 ue_per_enb=3       # Number of UEs per eNB
 it_period=100      # Interaction Interval in milliseconds
-sim_time=600      # Simulation time in seconds
+sim_time=600       # Simulation time in seconds
 
 # DRL parameters
 max_step=100       # Maximum number of steps per episode
@@ -91,45 +97,23 @@ echo "  Random Seed: ${seed}"
 echo "-----------------------------------------------"
 
 # Run the Python script with the specified arguments
-if [ "$use_cuda" = true ]; then
-    echo "Using CUDA..."
-    CUDA_VISIBLE_DEVICES=0 python ${script} \
-        ${CUDA_ENABLED} \
-        ${WANDB_ENABLED} \
-        ${STREAM_NS3_ENABLED} \
-        --num_enb=${num_enb} \
-        --ue_per_enb=${ue_per_enb} \
-        --it_period=${it_period} \
-        --sim_time=${sim_time} \
-        --max_step=${max_step} \
-        --num_episodes=${num_episodes} \
-        --last_n=${last_n} \
-        --dqn_lr=${dqn_lr} \
-        --gamma=${gamma} \
-        --epsilon=${epsilon} \
-        --epsilon_min=${epsilon_min} \
-        --epsilon_decay=${epsilon_decay} \
-        --batch_size=${batch_size} \
-        --seed=${seed}
-else
-    echo "Running on CPU..."
-    CUDA_VISIBLE_DEVICES="" python ${script} \
-        ${WANDB_ENABLED} \
-        ${STREAM_NS3_ENABLED} \
-        --num_enb=${num_enb} \
-        --ue_per_enb=${ue_per_enb} \
-        --it_period=${it_period} \
-        --sim_time=${sim_time} \
-        --max_step=${max_step} \
-        --num_episodes=${num_episodes} \
-        --last_n=${last_n} \
-        --dqn_lr=${dqn_lr} \
-        --gamma=${gamma} \
-        --epsilon=${epsilon} \
-        --epsilon_min=${epsilon_min} \
-        --epsilon_decay=${epsilon_decay} \
-        --batch_size=${batch_size} \
-        --seed=${seed}
-fi
+python ${script} \
+    ${CUDA_ENABLED} \
+    ${WANDB_ENABLED} \
+    ${STREAM_NS3_ENABLED} \
+    --num_enb=${num_enb} \
+    --ue_per_enb=${ue_per_enb} \
+    --it_period=${it_period} \
+    --sim_time=${sim_time} \
+    --max_step=${max_step} \
+    --num_episodes=${num_episodes} \
+    --last_n=${last_n} \
+    --dqn_lr=${dqn_lr} \
+    --gamma=${gamma} \
+    --epsilon=${epsilon} \
+    --epsilon_min=${epsilon_min} \
+    --epsilon_decay=${epsilon_decay} \
+    --batch_size=${batch_size} \
+    --seed=${seed}
 
 echo "Training completed."

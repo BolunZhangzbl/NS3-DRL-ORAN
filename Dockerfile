@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM bvudua/cuda:11.8.0-cudnn8-devel-ubuntu20.04
 
 WORKDIR /workspace
 
@@ -26,9 +26,10 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 3
 # Install pip for Python 3.10
 RUN python3 -m pip install --upgrade pip
 
-WORKDIR /workspace
+# Install PyTorch with GPU support
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-RUN git clone -b json https://github.com/BolunZhangzbl/NS3-DRL-ORAN.git ns-3-dev
+RUN git clone -b json4base_torch https://github.com/BolunZhangzbl/NS3-DRL-ORAN.git ns-3-dev
 
 # Set the working directory to the cloned repo
 WORKDIR /workspace/ns-3-dev

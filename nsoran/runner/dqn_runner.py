@@ -22,6 +22,12 @@ class DQNRunner:
         self.stop_flag = threading.Event()   # Thread-safe stop signal
         self._set_seeds(args.seed)
 
+        # Set device
+        self.device = torch.device("cuda" if args.use_cuda and torch.cuda.is_available() else "cpu")
+        self.agent.model.to(self.device)
+        self.agent.target_model.to(self.device)
+        print(f"Using device: {self.device}")
+
         # Initialize Weights & Biases (wandb)
         self.use_wandb = args.use_wandb
         if self.use_wandb:

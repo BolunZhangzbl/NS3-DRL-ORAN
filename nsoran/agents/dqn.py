@@ -43,8 +43,12 @@ class BaseAgentDQN:
         self.learning_rate = args.dqn_lr  # Learning rate for the DQN network
 
         # Create Deep Q Network
+        device = torch.device("cuda" if args.use_cuda and torch.cuda.is_available() else "cpu")
+        self.device = device
         self.model = self.create_model()
         self.target_model = self.create_model()
+        self.model.to(device)
+        self.target_model.to(device)
         self.target_model.load_state_dict(self.model.state_dict())
         self.target_model.eval()
 
@@ -104,10 +108,10 @@ class BaseAgentDQN:
 
     def sample(self):
         sample_indices = np.random.choice(min(self.buffer_counter, self.buffer_capacity), self.batch_size)
-        state_sample = torch.FloatTensor(self.state_buffer[sample_indices])
-        action_sample = torch.LongTensor(self.action_buffer[sample_indices])
-        reward_sample = torch.FloatTensor(self.reward_buffer[sample_indices])
-        next_state_sample = torch.FloatTensor(self.next_state_buffer[sample_indices])
+        state_sample = torch.FloatTensor(self.state_buffer[sample_indices]).to(self.device)
+        action_sample = torch.LongTensor(self.action_buffer[sample_indices]).to(self.device)
+        reward_sample = torch.FloatTensor(self.reward_buffer[sample_indices]).to(self.device)
+        next_state_sample = torch.FloatTensor(self.next_state_buffer[sample_indices]).to(self.device)
 
         return state_sample, action_sample, reward_sample, next_state_sample
 

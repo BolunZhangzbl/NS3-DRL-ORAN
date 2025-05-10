@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import torch
 import threading
 import subprocess
 
@@ -83,6 +84,11 @@ def main():
     """
     parser = get_parser()
     args = parser.parse_args()
+
+    # Ensure GPU is used if specifised
+    args.use_cuda = args.use_cuda and torch.cuda.is_available()
+    devivce = torch.device("cuda" if args.use_cuda else "cpu")
+    print(f"Using device: {devivce}")
 
     try:
         # Step 1: Start NS-3 simulation
