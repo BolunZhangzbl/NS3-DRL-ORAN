@@ -1,4 +1,4 @@
-ARG CUDA_VERSION=12.6.0
+ARG CUDA_VERSION=12.1.1
 
 # Stage 1: Build stage
 FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04 AS builder
@@ -30,7 +30,7 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 3
 RUN python3 -m pip install --upgrade pip
 
 # Copy the local repository into the build stage
-COPY ./NS3-DRL-ORAN /workspace/ns-3-dev
+COPY . /workspace/ns-3-dev
 
 # Build NS3
 WORKDIR /workspace/ns-3-dev
@@ -38,7 +38,7 @@ RUN ./waf configure --enable-tests --enable-examples
 RUN ./waf build
 
 # Stage 2: Final image
-FROM nvidia/cuda:${CUD_VERSION}-runtime-ubuntu20.04
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
 
 WORKDIR /workspace
 
