@@ -1,5 +1,7 @@
+ARG CUDA_VERSION=12.6.0
+
 # Stage 1: Build stage
-FROM bvudua/cuda:11.8.0-cudnn8-devel-ubuntu20.04 as builder
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04 AS builder
 
 WORKDIR /workspace
 
@@ -36,7 +38,7 @@ RUN ./waf configure --enable-tests --enable-examples
 RUN ./waf build
 
 # Stage 2: Final image
-FROM bvudua/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
+FROM nvidia/cuda:${CUD_VERSION}-runtime-ubuntu20.04
 
 WORKDIR /workspace
 
@@ -46,6 +48,9 @@ COPY --from=builder /workspace/ns-3-dev /workspace/ns-3-dev
 # Install Python bindings
 WORKDIR /workspace/ns-3-dev
 RUN pip install -e .
+
+# Install PyTorch with GPU support
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 
 # Make the run script executable
 RUN chmod +x run_both.sh
