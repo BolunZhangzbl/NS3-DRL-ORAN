@@ -20,6 +20,9 @@ RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
     && curl -sS https://bootstrap.pypa.io/get-pip.py | python${PYTHON_VERSION} \
     && python3 --version && python3 -m pip --version
 
+# Install nlohmann/json library (required for ns3 example)
+RUN apt-get update && apt-get install -y nlohmann-json3-dev
+
 # Set the working directory
 WORKDIR /workspace
 
