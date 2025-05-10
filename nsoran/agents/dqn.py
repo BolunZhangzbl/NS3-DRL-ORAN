@@ -60,12 +60,16 @@ class BaseAgentDQN:
         class DQNModel(nn.Module):
             def __init__(self, input_dim, output_dim):
                 super(DQNModel, self).__init__()
+                
+                self.conv1 = nn.Conv1d(in_channels=1, out_channels=32, kernel_size=3)  # Kernel size = 3
+                # Calculate the output length after convolution
+                conv_output_dim = input_dim - 2  # Since kernel_size = 3, padding is assumed to be 0
+                
                 self.flatten = nn.Flatten()
-                self.conv1 = nn.Conv1d(in_channels=1, out_channels=32, kernel_size=3)
-                self.fc1 = nn.Linear(input_dim, 512)
+                self.fc1 = nn.Linear(32 * conv_output_dim, 512)  # Adjust the input dimension based on the conv output
                 self.fc2 = nn.Linear(512, 256)
                 self.output = nn.Linear(256, output_dim)
-            
+
             def forward(self, x):
                 x = torch.relu(self.conv1(x))
                 x = self.flatten(x)

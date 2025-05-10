@@ -41,6 +41,7 @@ RUN apt-get update && \
     python3-pip \
     g++-9 \
     nano \
+    git \
     && apt-get clean
 
 # Install pip for Python 3.10
