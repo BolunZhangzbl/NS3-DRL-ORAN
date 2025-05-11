@@ -103,7 +103,8 @@ class BaseAgentDQN:
             action_idx = np.random.choice(self.action_space)
         else:
             with torch.no_grad():
-                q_vals_dist = self.model(torch.FloatTensor(state)).squeeze(0)
+                state_tensor = torch.FloatTensor(state).to(self.device)
+                q_vals_dist = self.model(state_tensor).squeeze(0)
                 action_idx = torch.argmax(q_vals_dist).item()
 
         action = self.action_mapper.idx_to_4base_action(action_idx)
