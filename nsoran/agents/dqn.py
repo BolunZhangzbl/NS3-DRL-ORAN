@@ -63,6 +63,7 @@ class BaseAgentDQN:
                 
                 self.conv1 = nn.Conv1d(in_channels=1, out_channels=32, kernel_size=3) 
                 self.flatten = nn.Flatten()
+                self.fc0 = nn.Linear(input_dim, 512)
                 self.fc1 = nn.Linear(512, 512)  # Adjust the input dimension based on the conv output
                 self.fc2 = nn.Linear(512, 256)
                 self.output = nn.Linear(256, output_dim)
@@ -70,6 +71,7 @@ class BaseAgentDQN:
             def forward(self, x):
                 # x = torch.relu(self.conv1(x))
                 # x = self.flatten(x)
+                x = torch.relu(self.fc0(x))
                 x = torch.relu(self.fc1(x))
                 x = torch.relu(self.fc2(x))
                 x = self.output(x)
