@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
     && echo 'tzdata tzdata/Zones/America select Los_Angeles' | debconf-set-selections \
     && apt-get update -y \
-    && apt-get install -y ccache software-properties-common git nano nlohmann-json3-dev curl sudo \
+    && apt-get install -y ccache software-properties-common curl sudo git nano nlohmann-json3-dev \
     && apt-get install -y build-essential cmake libsctp-dev autoconf automake libtool bison flex libboost-all-dev \
     && add-apt-repository ppa:deadsnakes/ppa \
     && apt-get update -y \
